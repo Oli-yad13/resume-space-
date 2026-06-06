@@ -120,8 +120,6 @@ pnpm prisma:migrate:dev  # Apply local migrations
 
 ## Current Roadmap
 
-See [PROJECT_PLAN.md](./PROJECT_PLAN.md) for the stabilization and product roadmap.
-
 Immediate priorities:
 
 - Harden admin authentication and authorization.
@@ -129,6 +127,3 @@ Immediate priorities:
 - Clean the worktree into smaller reviewable changes.
 - Add CI checks for build, tests, lint, and Prisma generation.
 
-## License
-
-MIT. See [LICENSE.md](./LICENSE.md).
