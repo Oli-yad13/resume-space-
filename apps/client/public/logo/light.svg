@@ -1,0 +1,6 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="96" fill="#FAFAFA" />
+  <text x="256" y="268" text-anchor="middle" dominant-baseline="central"
+    font-family="'IBM Plex Sans', Inter, Segoe UI, Arial, sans-serif" font-size="232"
+    font-weight="700" letter-spacing="-8" fill="#09090B">RS</text>
+</svg>

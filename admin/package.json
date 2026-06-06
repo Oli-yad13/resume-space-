@@ -1,0 +1,46 @@
+{
+  "name": "resume-space-admin",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "prisma:sync": "node ../tools/scripts/sync-admin-prisma.mjs",
+    "prisma:generate": "pnpm prisma:sync && prisma generate",
+    "predev": "pnpm prisma:generate",
+    "prebuild": "pnpm prisma:generate",
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.0.0",
+    "lucide-react": "^0.545.0",
+    "next": "15.5.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "recharts": "^2.10.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.4",
+    "prisma": "^5.22.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "sharp",
+      "unrs-resolver"
+    ]
+  }
+}

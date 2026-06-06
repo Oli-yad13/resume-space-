@@ -1,0 +1,339 @@
+{
+  "basics": {
+    "name": "Eyoel Tekle",
+    "headline": "",
+    "email": "eyoeltekle10@gmail.com",
+    "phone": "",
+    "location": "Addis Ababa, Ethiopia",
+    "url": {
+      "label": "https://github.com/EYOELTEKLE/",
+      "href": "https://github.com/EYOELTEKLE/"
+    },
+    "customFields": [],
+    "picture": {
+      "url": "",
+      "size": 128,
+      "aspectRatio": 1,
+      "borderRadius": 0,
+      "effects": {
+        "hidden": true,
+        "border": false,
+        "grayscale": false
+      }
+    }
+  },
+  "sections": {
+    "summary": {
+      "name": "Summary",
+      "columns": 1,
+      "visible": true,
+      "id": "summary",
+      "content": "Experienced Software Engineer with a proven track record in full-stack development, specializing in modern web technologies. Passionate about creating scalable solutions and mentoring development teams. Strong background in React, Node.js, and cloud technologies with expertise in building enterprise-grade applications."
+    },
+    "profiles": {
+      "name": "Profiles",
+      "columns": 1,
+      "visible": true,
+      "id": "profiles",
+      "items": [
+        {
+          "id": "profiles-1",
+          "visible": true,
+          "network": "LinkedIn",
+          "username": "eyoel-tekle-613090203",
+          "icon": "linkedin",
+          "url": {
+            "label": "",
+            "href": "https://www.linkedin.com/in/eyoel-tekle-613090203/"
+          }
+        },
+        {
+          "id": "profiles-2",
+          "visible": true,
+          "network": "GitHub",
+          "username": "EYOELTEKLE",
+          "icon": "github",
+          "url": {
+            "label": "",
+            "href": "https://github.com/EYOELTEKLE/"
+          }
+        }
+      ]
+    },
+    "experience": {
+      "name": "Professional Experience",
+      "columns": 1,
+      "visible": true,
+      "id": "experience",
+      "items": [
+        {
+          "id": "experience-1",
+          "organization": "YeneHealth",
+          "position": "Software Engineer",
+          "location": "Addis Ababa, Ethiopia",
+          "date": "2016/01 – 2021/10",
+          "summary": "• Developed and maintained web applications using modern technologies\n• Collaborated with cross-functional teams to deliver high-quality software solutions\n• Implemented best practices for code quality and performance optimization\n• Led the development of a patient management system serving 10,000+ users"
+        },
+        {
+          "id": "experience-2",
+          "organization": "TechCorp Solutions",
+          "position": "Senior Frontend Developer",
+          "location": "Remote",
+          "date": "2021/11 – 2023/05",
+          "summary": "• Architected and built scalable React applications for enterprise clients\n• Mentored junior developers and conducted code reviews\n• Implemented CI/CD pipelines reducing deployment time by 60%\n• Collaborated with UX/UI designers to create intuitive user interfaces"
+        },
+        {
+          "id": "experience-3",
+          "organization": "Freelance Developer",
+          "position": "Full-Stack Developer",
+          "location": "Remote",
+          "date": "2023/06 – Present",
+          "summary": "• Delivered custom web solutions for various clients across different industries\n• Built e-commerce platforms with payment integration and inventory management\n• Created mobile-responsive applications using modern frameworks\n• Maintained 98% client satisfaction rate with on-time project delivery"
+        }
+      ]
+    },
+    "education": {
+      "name": "Education",
+      "columns": 1,
+      "visible": true,
+      "id": "education",
+      "items": [
+        {
+          "id": "education-1",
+          "institution": "ALX Holberton Software Engineering Programme",
+          "area": "ALX Holberton Software Engineering",
+          "studyType": "Certificate",
+          "location": "",
+          "date": "2022/02 – 2023/03"
+        }
+      ]
+    },
+    "skills": {
+      "name": "Skills",
+      "columns": 2,
+      "visible": true,
+      "id": "skills",
+      "items": [
+        {
+          "id": "skill-1",
+          "name": "JavaScript & TypeScript",
+          "level": 5
+        },
+        {
+          "id": "skill-2",
+          "name": "React & Next.js",
+          "level": 5
+        },
+        {
+          "id": "skill-3",
+          "name": "Node.js & Express",
+          "level": 4
+        },
+        {
+          "id": "skill-4",
+          "name": "Python & Django",
+          "level": 4
+        },
+        {
+          "id": "skill-5",
+          "name": "Database Design",
+          "level": 4
+        },
+        {
+          "id": "skill-6",
+          "name": "Git & Version Control",
+          "level": 5
+        },
+        {
+          "id": "skill-7",
+          "name": "AWS & Cloud Services",
+          "level": 3
+        },
+        {
+          "id": "skill-8",
+          "name": "Project Management",
+          "level": 4
+        }
+      ]
+    },
+    "certifications": {
+      "name": "Certifications",
+      "columns": 1,
+      "visible": true,
+      "id": "certifications",
+      "items": [
+        {
+          "id": "cert-1",
+          "name": "AWS Certified Solutions Architect",
+          "issuer": "Amazon Web Services",
+          "date": "2023/03"
+        },
+        {
+          "id": "cert-2",
+          "name": "Google Cloud Professional Developer",
+          "issuer": "Google Cloud",
+          "date": "2022/11"
+        },
+        {
+          "id": "cert-3",
+          "name": "React Developer Certification",
+          "issuer": "Meta",
+          "date": "2022/08"
+        },
+        {
+          "id": "cert-4",
+          "name": "Node.js Application Developer",
+          "issuer": "OpenJS Foundation",
+          "date": "2022/05"
+        }
+      ]
+    },
+    "projects": {
+      "name": "Projects",
+      "columns": 1,
+      "visible": true,
+      "id": "projects",
+      "items": [
+        {
+          "id": "project-1",
+          "name": "E-Commerce Platform",
+          "date": "2023/08",
+          "summary": "• Built a complete e-commerce platform using React, Node.js, and MongoDB\n• Implemented payment processing with Stripe integration\n• Developed admin dashboard for inventory and order management\n• Achieved 99.9% uptime and handled 1000+ concurrent users"
+        },
+        {
+          "id": "project-2",
+          "name": "Task Management System",
+          "date": "2023/04",
+          "summary": "• Created a real-time task management system with React and Socket.io\n• Implemented user authentication and role-based access control\n• Built drag-and-drop interface for task organization\n• Integrated with Google Calendar for seamless scheduling"
+        },
+        {
+          "id": "project-3",
+          "name": "API Analytics Dashboard",
+          "date": "2022/12",
+          "summary": "• Developed a comprehensive API analytics dashboard using Vue.js and Python\n• Created real-time data visualization with Chart.js and D3.js\n• Implemented automated alerting system for API performance issues\n• Reduced API response time monitoring by 75%"
+        }
+      ]
+    },
+    "languages": {
+      "name": "Languages",
+      "columns": 1,
+      "visible": true,
+      "id": "languages",
+      "items": [
+        {
+          "id": "lang-1",
+          "name": "English",
+          "description": "Native"
+        },
+        {
+          "id": "lang-2",
+          "name": "Amharic",
+          "description": "Native"
+        },
+        {
+          "id": "lang-3",
+          "name": "French",
+          "description": "Conversational"
+        }
+      ]
+    },
+    "awards": {
+      "name": "Awards",
+      "columns": 1,
+      "visible": true,
+      "id": "awards",
+      "items": [
+        {
+          "id": "award-1",
+          "title": "Best Project Innovation Award",
+          "awarder": "TechCorp Solutions",
+          "date": "2023/02"
+        },
+        {
+          "id": "award-2",
+          "title": "Outstanding Performance Recognition",
+          "awarder": "YeneHealth",
+          "date": "2020/12"
+        }
+      ]
+    },
+    "publications": {
+      "name": "Publications",
+      "columns": 1,
+      "visible": false,
+      "id": "publications",
+      "items": []
+    },
+    "volunteer": {
+      "name": "Volunteer Experience",
+      "columns": 1,
+      "visible": false,
+      "id": "volunteer",
+      "items": []
+    },
+    "references": {
+      "name": "References",
+      "columns": 1,
+      "visible": false,
+      "id": "references",
+      "items": []
+    },
+    "interests": {
+      "name": "Interests",
+      "columns": 1,
+      "visible": false,
+      "id": "interests",
+      "items": []
+    }
+  },
+  "metadata": {
+    "template": "alx",
+    "layout": [
+      [
+        [
+          "summary",
+          "profiles",
+          "education",
+          "experience",
+          "skills",
+          "certifications",
+          "projects",
+          "languages",
+          "awards"
+        ]
+      ]
+    ],
+    "css": {
+      "value": "",
+      "visible": false
+    },
+    "page": {
+      "margin": 18,
+      "format": "a4",
+      "options": {
+        "breakLine": true,
+        "pageNumbers": true
+      }
+    },
+    "theme": {
+      "background": "#ffffff",
+      "text": "#000000",
+      "primary": "#000000"
+    },
+    "typography": {
+      "font": {
+        "family": "Inter",
+        "subset": "latin",
+        "variants": ["regular", "medium", "semibold", "bold"],
+        "size": 14
+      },
+      "lineHeight": 1.6,
+      "hideIcons": false,
+      "underlineLinks": false
+    },
+    "notes": "ALX Template - Clean modern single column layout with proper header structure and minimal design"
+  },
+  "public": false,
+  "createdAt": "2024-01-01T00:00:00.000Z",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}

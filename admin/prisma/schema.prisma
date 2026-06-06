@@ -1,0 +1,211 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Provider {
+  email
+  github
+  google
+  openid
+}
+
+enum Visibility {
+  public
+  private
+}
+
+model User {
+  id               String             @id @default(cuid())
+  name             String
+  picture          String?
+  username         String             @unique
+  email            String             @unique
+  locale           String             @default("en-US")
+  emailVerified    Boolean            @default(false)
+  twoFactorEnabled Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  provider         Provider
+  secrets          Secrets?
+  resumes          Resume[]
+  bookmarks        ResourceBookmark[]
+  applications     Application[]
+}
+
+model Secrets {
+  id                   String   @id @default(cuid())
+  password             String?
+  lastSignedIn         DateTime @default(now())
+  verificationToken    String?
+  twoFactorSecret      String?
+  twoFactorBackupCodes String[] @default([])
+  refreshToken         String?
+  resetToken           String?  @unique
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, id])
+}
+
+model Resume {
+  id         String      @id @default(cuid())
+  title      String
+  slug       String
+  data       Json        @default("{}")
+  visibility Visibility  @default(private)
+  locked     Boolean     @default(false)
+  statistics Statistics?
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@unique([userId, id])
+  @@unique([userId, slug])
+  @@index(fields: [userId])
+}
+
+model Statistics {
+  id        String   @id @default(cuid())
+  views     Int      @default(0)
+  downloads Int      @default(0)
+  resumeId  String   @unique
+  resume    Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([resumeId, id])
+}
+
+enum ResourceType {
+  VIDEO
+  ARTICLE
+}
+
+model Resource {
+  id          String               @id @default(cuid())
+  title       String
+  description String
+  type        ResourceType
+  category    String
+  videoUrl    String?
+  content     String?              @db.Text
+  featured    Boolean              @default(false)
+  published   Boolean              @default(true)
+  views       Int                  @default(0)
+  order       Int                  @default(0)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  bookmarks   ResourceBookmark[]
+
+  @@index([category])
+  @@index([type])
+  @@index([published])
+  @@index([featured])
+}
+
+model ResourceBookmark {
+  id         String   @id @default(cuid())
+  userId     String
+  resourceId String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, resourceId])
+  @@index([userId])
+  @@index([resourceId])
+}
+
+enum LocationType {
+  REMOTE
+  ONSITE
+  HYBRID
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  FREELANCE
+}
+
+enum ExperienceLevel {
+  ENTRY
+  JUNIOR
+  MID_LEVEL
+  SENIOR
+  LEAD
+  EXECUTIVE
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWED
+  SHORTLISTED
+  INTERVIEWED
+  OFFERED
+  REJECTED
+  WITHDRAWN
+  ACCEPTED
+}
+
+model Job {
+  id               String          @id @default(cuid())
+  title            String
+  company          String
+  companyLogo      String?
+  location         String
+  locationType     LocationType
+  employmentType   EmploymentType
+  description      String          @db.Text
+  requirements     String?         @db.Text
+  responsibilities String?         @db.Text
+  salaryMin        Int?
+  salaryMax        Int?
+  salaryCurrency   String          @default("ETB")
+  category         String
+  tags             String[]        @default([])
+  experienceLevel  ExperienceLevel
+  featured         Boolean         @default(false)
+  published        Boolean         @default(true)
+  expiresAt        DateTime?
+  views            Int             @default(0)
+  applications     Application[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([category])
+  @@index([locationType])
+  @@index([employmentType])
+  @@index([experienceLevel])
+  @@index([published])
+  @@index([featured])
+  @@index([createdAt])
+}
+
+model Application {
+  id           String            @id @default(cuid())
+  jobId        String
+  userId       String
+  job          Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumeUrl    String?
+  coverLetter  String?           @db.Text
+  status       ApplicationStatus @default(PENDING)
+  notes        String?           @db.Text
+  appliedAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@unique([userId, jobId])
+  @@index([jobId])
+  @@index([userId])
+  @@index([status])
+  @@index([appliedAt])
+}
