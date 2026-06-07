@@ -6,7 +6,7 @@ import { QuotesIcon } from "@phosphor-icons/react";
 import { cn } from "@resume-space/utils";
 import { motion } from "framer-motion";
 
-const email = "hello@amruthpillai.com";
+const repositoryUrl = "https://github.com/Oli-yad13/resume-space-";
 
 type Testimonial = {
   quote: string;
@@ -23,7 +23,7 @@ const testimonials: Testimonial[][] = [
     {
       name: "S. Bhaije",
       quote:
-        "Hi Amruth! First off, many thanks for making RxResume! This is one of the best resume-building tools I have ever found. Have also recommended it to many of my university friends...",
+        "First off, many thanks for making Resume Space. This is one of the best resume-building tools I have ever found. Have also recommended it to many of my university friends...",
     },
     {
       name: "K. Lietzau",
@@ -40,7 +40,7 @@ const testimonials: Testimonial[][] = [
     {
       name: "P. Jignesh",
       quote:
-        "Hey, I am a Mechanical engineer, not understand coding, messy AI, and computer systems, But wait, what drags me here is your creativity, Your website RxResume is all good! using it and the efforts you made to keep this free is remarkable. keeping doing great work.",
+        "Hey, I am a Mechanical engineer, not understand coding, messy AI, and computer systems, but your website Resume Space is all good. Using it and the effort made to keep this free is remarkable. Keep doing great work.",
     },
   ],
   [
@@ -52,12 +52,12 @@ const testimonials: Testimonial[][] = [
     {
       name: "S. Innocent",
       quote:
-        "First of all, I appreciate your effort for making reactive resume a free tool for the community. Very much better than many premium resume builder...",
+        "First of all, I appreciate your effort for making Resume Space a free tool for the community. Very much better than many premium resume builders...",
     },
     {
       name: "M. Fritza",
       quote:
-        "Hello sir, I just wanted to write a thank you message for developing RxResume. It's easy to use, intuitive and it's much more practical than many others that made you pay up after spending an hour to create your CV. I'll be sure to buy you a coffee after I get my first job. I wish you everything best in life!",
+        "Hello, I just wanted to write a thank you message for developing Resume Space. It's easy to use, intuitive and much more practical than many others that make you pay after spending an hour creating your CV. I wish you everything best in life!",
     },
   ],
 ];
@@ -69,10 +69,10 @@ export const TestimonialsSection = () => (
       <p className="mx-auto max-w-2xl leading-relaxed">
         <Trans>
           I always love to hear from the users of Resume Space with feedback or support. Here are
-          some of the messages I've received. If you have any feedback, feel free to drop me an
-          email at{" "}
-          <a href={email} className="underline">
-            {email}
+          some of the messages I've received. If you have any feedback, feel free to open an issue
+          on{" "}
+          <a href={repositoryUrl} className="underline">
+            GitHub
           </a>
           .
         </Trans>

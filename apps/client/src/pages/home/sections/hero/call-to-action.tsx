@@ -33,7 +33,11 @@ export const HeroCTA = () => {
       </Button>
 
       <Button asChild size="lg" variant="link">
-        <a href="https://docs.rxresu.me" target="_blank" rel="noopener noreferrer nofollow">
+        <a
+          href="https://github.com/Oli-yad13/resume-space-/blob/main/RUNNING.md"
+          target="_blank"
+          rel="noopener noreferrer nofollow"
+        >
           <BookIcon className="mr-3" />
           {t`Learn more`}
         </a>

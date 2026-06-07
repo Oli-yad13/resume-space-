@@ -71,20 +71,13 @@ const Question2 = () => (
       </p>
 
       <p>
-        But if you do feel like supporting the developer and the future development of Reactive
-        Resume, please donate (<em>only if you have some extra money lying around</em>) on my{" "}
-        <a href="https://github.com/sponsors/AmruthPillai/">GitHub Sponsors page</a>. You can choose
-        to donate one-time or sponsor a recurring donation.
+        If you want to support the future development of Resume Space, the best help right now is
+        testing the app, opening issues, and sharing it with other job seekers.
       </p>
 
       <p>
-        Alternatively, if you are in the US, or you are a part of a large educational institution or
-        corporate organization, you can{" "}
-        <a href="https://opencollective.com/reactive-resume">
-          support the project through Open Collective
-        </a>
-        . We are fiscally hosted through Open Collective Europe, which means your donations and
-        sponsorships could also be made tax-deductible.
+        If you are part of a school, community, or organization that wants to use Resume Space at
+        scale, open an issue on GitHub so the project requirements can be documented properly.
       </p>
     </AccordionContent>
   </AccordionItem>
@@ -99,26 +92,28 @@ const Question3 = () => (
     <AccordionContent className="prose max-w-none dark:prose-invert">
       <p>
         <strong>If you speak a language other than English</strong>, sign up to be a translator on{" "}
-        <a href="https://translate.rxresu.me/" target="_blank" rel="noreferrer">
-          Crowdin
+        <a
+          href="https://github.com/Oli-yad13/resume-space-/issues/new/choose"
+          target="_blank"
+          rel="noreferrer"
+        >
+          GitHub
         </a>
-        , our translation management service. You can help translate the product to your language
-        and share it among your community. Even if the language is already translated, it helps to
-        sign up as you would be notified when there are new phrases to be translated.
+        . Translation requests and language support can be tracked there while the project setup is
+        being cleaned up.
       </p>
 
       <p>
         <strong>If you work in the media, are an influencer or have lots of friends</strong>, share
         the app with your circles and let them know so it can reach the people who need it the most.
-        I'm also <a href="mailto:hello@amruthpillai.com">open to giving tech talks</a>, although
-        that's wishful thinking. But if you do mention Resume Space on your blog, let me know so
-        that I can link back to you here.
+        If you mention Resume Space on your blog or in your community, link back to the repository
+        so people can find the project and track updates.
       </p>
 
       <p>
         <strong>If you found a bug or have an idea for a feature</strong>, raise an issue on{" "}
         <a
-          href="https://github.com/AmruthPillai/Reactive-Resume/issues/new/choose"
+          href="https://github.com/Oli-yad13/resume-space-/issues/new/choose"
           target="_blank"
           rel="noreferrer"
         >
@@ -151,7 +146,7 @@ const Question4 = () => {
             <a
               key={language.id}
               className="no-underline"
-              href={`https://crowdin.com/translate/reactive-resume/all/en-${language.editorCode}`}
+              href="https://github.com/Oli-yad13/resume-space-/issues/new/choose"
               target="_blank"
               rel="noreferrer"
             >
@@ -176,11 +171,14 @@ const Question4 = () => {
 
         <p>
           If you'd like to improve the translations for your language, please{" "}
-          <a href="https://crowdin.com/project/reactive-resume" rel="noreferrer" target="_blank">
-            sign up as a translator on Crowdin
+          <a
+            href="https://github.com/Oli-yad13/resume-space-/issues/new/choose"
+            rel="noreferrer"
+            target="_blank"
+          >
+            open a translation request on GitHub
           </a>{" "}
-          and join the project. You can also choose to be notified of any new phrases that get added
-          to the app.
+          and join the cleanup effort there.
         </p>
 
         <p>

@@ -36,13 +36,13 @@ const DonateCard = () => (
     </CardContent>
     <CardFooter>
       <a
-        href="https://opencollective.com/reactive-resume"
+        href="https://github.com/Oli-yad13/resume-space-"
         className={cn(buttonVariants({ size: "sm" }))}
         rel="noopener noreferrer nofollow"
         target="_blank"
       >
         <HandHeartIcon size={14} weight="bold" className="mr-2" />
-        <span className="line-clamp-1">{t`Donate to Resume Space`}</span>
+        <span className="line-clamp-1">{t`View the repository`}</span>
       </a>
     </CardFooter>
   </Card>
@@ -65,7 +65,7 @@ const IssuesCard = () => (
     </CardContent>
     <CardFooter className="space-x-4">
       <a
-        href="https://github.com/AmruthPillai/Reactive-Resume/issues/new/choose"
+        href="https://github.com/Oli-yad13/resume-space-/issues/new/choose"
         className={cn(buttonVariants({ size: "sm" }))}
         rel="noopener noreferrer nofollow"
         target="_blank"
@@ -74,9 +74,14 @@ const IssuesCard = () => (
         <span className="line-clamp-1">{t`Raise an issue`}</span>
       </a>
 
-      <a className={cn(buttonVariants({ size: "sm" }))} href="mailto:hello@amruthpillai.com">
+      <a
+        className={cn(buttonVariants({ size: "sm" }))}
+        href="https://github.com/Oli-yad13/resume-space-"
+        rel="noopener noreferrer nofollow"
+        target="_blank"
+      >
         <EnvelopeSimpleOpenIcon size={14} weight="bold" className="mr-2" />
-        <span className="line-clamp-1">{t`Send me a message`}</span>
+        <span className="line-clamp-1">{t`Open the repository`}</span>
       </a>
     </CardFooter>
   </Card>
@@ -102,7 +107,7 @@ const DocumentationCard = () => (
     <CardFooter className="space-x-4">
       <a
         className={cn(buttonVariants({ size: "sm" }))}
-        href="https://docs.rxresu.me/"
+        href="https://github.com/Oli-yad13/resume-space-/blob/main/RUNNING.md"
         target="_blank"
         rel="noopener noreferrer nofollow"
       >

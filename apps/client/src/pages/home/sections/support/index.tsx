@@ -9,12 +9,12 @@ export const SupportSection = () => (
       <h1 className="text-4xl font-bold">{t`Supporting Resume Space`}</h1>
 
       <p className="max-w-4xl leading-loose">
-        {t`Resume Space is a free and open-source project crafted mostly by me, and your support would be greatly appreciated. If you're inclined to contribute, and only if you can afford to, consider making a donation through any of the listed platforms. Additionally, donations to Resume Space through Open Collective are tax-exempt, as the project is fiscally hosted by Open Collective Europe.`}
+        {t`Resume Space is a free and open-source project. The best ways to support it right now are to star the repository, report issues, share it with others, and help improve the product over time.`}
       </p>
 
       <div className="flex items-center gap-x-10">
         <a
-          href="https://github.com/sponsors/AmruthPillai"
+          href="https://github.com/Oli-yad13/resume-space-"
           rel="noreferrer noopener nofollow"
           target="_blank"
         >
@@ -32,7 +32,7 @@ export const SupportSection = () => (
           />
         </a>
         <a
-          href="https://opencollective.com/Reactive-Resume"
+          href="https://github.com/Oli-yad13/resume-space-/issues"
           rel="noreferrer noopener nofollow"
           target="_blank"
         >
@@ -49,14 +49,18 @@ export const SupportSection = () => (
             alt="Open Collective"
           />
         </a>
-        <a href="https://paypal.me/amruthde" rel="noreferrer noopener nofollow" target="_blank">
+        <a
+          href="https://github.com/Oli-yad13/resume-space-/blob/main/RUNNING.md"
+          rel="noreferrer noopener nofollow"
+          target="_blank"
+        >
           {/* eslint-disable-next-line lingui/no-unlocalized-strings */}
           <img src="/support-logos/paypal.svg" className="max-h-[28px]" alt="PayPal" />
         </a>
       </div>
 
       <p className="max-w-4xl leading-loose">
-        {t`If you're multilingual, we'd love your help in bringing the app to more languages and communities. Don't worry if you don't see your language on the list - just give me a shout-out on GitHub, and I'll make sure to include it. Ready to get started? Jump into translation over at Crowdin by clicking the link below.`}
+        {t`If you're multilingual, we'd love help bringing the app to more languages and communities. If your language is missing, open an issue on GitHub and we can track translation work there.`}
       </p>
 
       <div className="flex items-center gap-x-10">
@@ -75,7 +79,7 @@ export const SupportSection = () => (
       </div>
 
       <p className="max-w-4xl leading-loose">
-        {t`Even if you're not in a position to contribute financially, you can still make a difference by giving the GitHub repository a star, spreading the word to your friends, or dropping a quick message to let me know how Resume Space has helped you. Your feedback and support are always welcome and much appreciated!`}
+        {t`You can still make a real difference by starring the repository, opening thoughtful issues, testing changes, and spreading the word to people who need a better resume workflow.`}
       </p>
     </div>
   </section>
