@@ -1,12 +1,21 @@
 import { t } from "@lingui/macro";
-import { Briefcase, List as ListIcon, Sparkle, SquaresFour } from "@phosphor-icons/react";
-import { ScrollArea, Tabs, TabsContent, TabsList, TabsTrigger } from "@resume-space/ui";
+import {
+  ArrowRight,
+  Briefcase,
+  DownloadSimple,
+  FileText,
+  List as ListIcon,
+  Sparkle,
+  SquaresFour,
+} from "@phosphor-icons/react";
+import { Button, ScrollArea, Tabs, TabsContent, TabsList, TabsTrigger } from "@resume-space/ui";
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router";
 import { useLocalStorage } from "usehooks-ts";
 
 import { useJobRecommendations } from "@/client/services/job";
+import { useDialog } from "@/client/stores/dialog";
 
 import { GridView } from "./_layouts/grid";
 import { ListView } from "./_layouts/list";
@@ -18,6 +27,8 @@ export const ResumesPage = () => {
     initializeWithValue: true,
   });
 
+  const { open: openResumeDialog } = useDialog("resume");
+  const { open: openImportDialog } = useDialog("import");
   const { recommendations, loading: recommendationsLoading } = useJobRecommendations();
   const showRecommendations = recommendations.length > 0 && !recommendationsLoading;
 
@@ -28,6 +39,88 @@ export const ResumesPage = () => {
           {t`Resumes`} - {t`Resume Space`}
         </title>
       </Helmet>
+
+      <motion.section
+        initial={{ opacity: 0, y: -16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-6 rounded-xl border bg-card p-6 shadow-sm"
+      >
+        <div className="grid gap-6 lg:grid-cols-[1.5fr,1fr]">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              <Sparkle size={12} weight="fill" />
+              {t`Main workflow`}
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold">{t`Build, tailor, apply, track.`}</h2>
+              <p className="max-w-2xl leading-7 text-muted-foreground">
+                {t`Start with a resume, prepare a stronger version, move into matching jobs, and keep your applications visible without leaving the workspace.`}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={() => {
+                  openResumeDialog("create");
+                }}
+              >
+                <FileText size={16} className="mr-2" />
+                {t`Create Resume`}
+              </Button>
+
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  openImportDialog("create");
+                }}
+              >
+                <DownloadSimple size={16} className="mr-2" />
+                {t`Import Resume`}
+              </Button>
+
+              <Button asChild variant="ghost">
+                <Link to="/jobs">
+                  <Briefcase size={16} className="mr-2" />
+                  {t`Browse Jobs`}
+                </Link>
+              </Button>
+
+              <Button asChild variant="ghost">
+                <Link to="/applications">
+                  {t`Track Applications`}
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <div className="rounded-lg border bg-secondary/30 p-4">
+              <div className="text-sm font-medium">{t`Step 1`}</div>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                {t`Create or import a source resume.`}
+              </p>
+            </div>
+
+            <div className="rounded-lg border bg-secondary/30 p-4">
+              <div className="text-sm font-medium">{t`Step 2`}</div>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                {t`Use recommendations and tailoring to target better roles.`}
+              </p>
+            </div>
+
+            <div className="rounded-lg border bg-secondary/30 p-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-medium">{t`Step 3`}</div>
+                <ArrowRight size={14} className="text-muted-foreground" />
+              </div>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                {t`Apply and monitor progress in one pipeline.`}
+              </p>
+            </div>
+          </div>
+        </div>
+      </motion.section>
 
       {/* AI-Powered Job Recommendations Widget */}
       {showRecommendations && (

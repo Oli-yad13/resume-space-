@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet-async";
 import { FAQSection } from "./sections/faq";
 import { HeroSection } from "./sections/hero";
 import { TemplatesSection } from "./sections/templates";
+import { WorkflowSection } from "./sections/workflow";
 
 export const HomePage = () => {
   const { i18n } = useLingui();
@@ -25,6 +26,7 @@ export const HomePage = () => {
       </Helmet>
 
       <HeroSection />
+      <WorkflowSection />
       {/* <LogoCloudSection /> */}
       {/* <StatisticsSection /> */}
       {/* <FeaturesSection /> */}
