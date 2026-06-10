@@ -45,20 +45,27 @@ export const BuilderToolbar = () => {
   const { printResume, loading } = usePrintResume();
 
   const onPrint = async () => {
-    const { url } = await printResume({ id });
-
-    openInNewTab(url);
+    try {
+      const { url } = await printResume({ id });
+      openInNewTab(url);
+    } catch {
+      // The mutation already shows the toast; keep the toolbar click handler from throwing.
+    }
   };
 
   const onCopy = async () => {
-    const { url } = await printResume({ id });
-    await navigator.clipboard.writeText(url);
+    try {
+      const { url } = await printResume({ id });
+      await navigator.clipboard.writeText(url);
 
-    toast({
-      variant: "success",
-      title: t`A link has been copied to your clipboard.`,
-      description: t`Anyone with this link can view and download the resume. Share it on your profile or with recruiters.`,
-    });
+      toast({
+        variant: "success",
+        title: t`A link has been copied to your clipboard.`,
+        description: t`Anyone with this link can view and download the resume. Share it on your profile or with recruiters.`,
+      });
+    } catch {
+      // The mutation already shows the toast; keep the toolbar click handler from throwing.
+    }
   };
 
   const onZoomIn = () => frameRef?.contentWindow?.postMessage({ type: "ZOOM_IN" }, "*");

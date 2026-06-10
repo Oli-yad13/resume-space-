@@ -27,9 +27,13 @@ export const ExportSection = () => {
 
   const onPdfExport = async () => {
     const { resume } = useResumeStore.getState();
-    const { url } = await printResume({ id: resume.id });
 
-    openInNewTab(url);
+    try {
+      const { url } = await printResume({ id: resume.id });
+      openInNewTab(url);
+    } catch {
+      // The mutation already shows the toast; keep the click handler from throwing.
+    }
   };
 
   return (

@@ -6,7 +6,7 @@ import { toast } from "@/client/hooks/use-toast";
 import { axios } from "@/client/libs/axios";
 
 export const printResume = async (data: { id: string }) => {
-  const response = await axios.get<UrlDto>(`/resume/print/${data.id}`);
+  const response = await axios.get<UrlDto>(`/resume/print/${data.id}`, { timeout: 60_000 });
 
   return response.data;
 };
