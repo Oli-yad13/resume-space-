@@ -1,4 +1,4 @@
-import { t, Trans } from "@lingui/macro";
+import { t } from "@lingui/macro";
 import { BookOpen, Briefcase, FadersHorizontalIcon, FileText, ReadCvLogoIcon } from "@phosphor-icons/react";
 import { Button, KeyboardShortcut, Separator } from "@resume-space/ui";
 import { cn } from "@resume-space/utils";
@@ -7,6 +7,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 import useKeyboardShortcut from "use-keyboard-shortcut";
 
 // import { Copyright } from "@/client/components/copyright";
+import { Logo } from "@/client/components/logo";
 import { UserAvatar } from "@/client/components/user-avatar";
 import { UserOptions } from "@/client/components/user-options";
 import { useUser } from "@/client/services/user";
@@ -112,13 +113,9 @@ export const Sidebar = ({ setOpen }: SidebarProps) => {
   return (
     <div className="flex h-full flex-col gap-y-4">
       <div className="ml-12 flex justify-center lg:ml-0">
-        <Button asChild size="icon" variant="ghost" className="">
-          <Link to="/" className="group flex flex-col transition-opacity hover:opacity-70">
-            <span className="text-lg font-bold tracking-tight text-foreground">
-              <Trans>Resume Space</Trans>
-            </span>
-          </Link>
-        </Button>
+        <Link to="/" className="transition-opacity hover:opacity-70">
+          <Logo size={34} />
+        </Link>
       </div>
 
       <Separator className="opacity-50" />

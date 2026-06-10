@@ -3,6 +3,8 @@ import { BookOpen, Briefcase } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { Link } from "react-router";
 
+import { Logo } from "@/client/components/logo";
+
 // import { DonationBanner } from "./donation-banner";
 
 export const Header = () => (
@@ -15,13 +17,8 @@ export const Header = () => (
 
     <div className="bg-gradient-to-b from-background to-transparent py-3">
       <div className="container flex items-center justify-between">
-        <Link to="/" className="group flex flex-col transition-opacity hover:opacity-70">
-          <span className="text-xl font-bold tracking-tight text-foreground">
-            <Trans>Resume Space</Trans>
-          </span>
-          <span className="text-[10px] font-medium uppercase tracking-wider opacity-50">
-            <Trans>Build Your Future</Trans>
-          </span>
+        <Link to="/" className="transition-opacity hover:opacity-70">
+          <Logo size={40} />
         </Link>
 
         <nav className="flex items-center gap-6">
