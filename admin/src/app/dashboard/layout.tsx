@@ -1,19 +1,14 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { isAuthenticated } from "@/lib/auth";
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { requireAdmin } from "@/lib/session";
 
-export default function DashLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+export default async function DashLayout({ children }: { children: React.ReactNode }) {
+  // Server-side gate: only ORG_ADMIN / SUPER_ADMIN sessions get in.
+  const user = await requireAdmin();
 
-  useEffect(() => {
-    // Check authentication
-    if (!isAuthenticated()) {
-      router.push("/");
-    }
-  }, [router]);
-
-  return <DashboardLayout>{children}</DashboardLayout>;
+  return (
+    <AuthProvider user={user}>
+      <DashboardLayout>{children}</DashboardLayout>
+    </AuthProvider>
+  );
 }

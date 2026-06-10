@@ -9,7 +9,8 @@ export function Card({ children, className }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-zinc-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-lg",
+        // Flat, minimal (odit.et style): hairline border, no shadow, no motion.
+        "rounded-md border border-zinc-200 bg-white",
         className,
       )}
     >

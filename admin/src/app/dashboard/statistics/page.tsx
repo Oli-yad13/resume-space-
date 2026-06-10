@@ -1,5 +1,6 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { prisma } from "@/lib/prisma";
+import { requireSuperAdmin } from "@/lib/session";
 
 async function getStatistics() {
   try {
@@ -73,6 +74,7 @@ async function getStatistics() {
 }
 
 export default async function StatisticsPage() {
+  await requireSuperAdmin();
   const stats = await getStatistics();
 
   return (

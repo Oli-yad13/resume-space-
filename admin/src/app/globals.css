@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+/* Brand palette sampled from the Resume Space logo:
+   purple text #504DA0, gradient blue #204DA7 → pink #E55D87. */
+@theme {
+  --color-brand: #504da0;
+  --color-brand-dark: #403d85;
+  --color-brand-soft: #eeedf8;
+  --color-accent-blue: #204da7;
+  --color-accent-pink: #e55d87;
+}
+
+@layer utilities {
+  /* The logo's gradient as a hairline accent (stat cards, login card). */
+  .brand-hairline {
+    background-image: linear-gradient(90deg, #204da7, #504da0, #e55d87);
+  }
+}
+
 /* Modern Admin Theme with Zinc Color Palette */
 @layer base {
   * {

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireSuperAdmin } from "@/lib/session";
 import UsersClient from "./users-client";
 
 async function getUsers() {
@@ -19,6 +20,7 @@ async function getUsers() {
 }
 
 export default async function UsersPage() {
+  await requireSuperAdmin();
   const users = await getUsers();
 
   return <UsersClient users={users} />;

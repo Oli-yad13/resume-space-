@@ -1,21 +1,14 @@
-import { prisma } from "@/lib/prisma";
+import { Metadata } from "next";
+
 import ResourcesClient from "./resources-client";
 
-async function getResources() {
-  try {
-    const resources = await prisma.resource.findMany({
-      orderBy: [{ featured: "desc" }, { order: "asc" }, { createdAt: "desc" }],
-    });
-    return resources;
-  } catch (error) {
-    console.error("Error fetching resources:", error);
-    return [];
-  }
+export const metadata: Metadata = {
+  title: "Resources",
+  description: "Manage learning resources",
+};
+
+// Data is fetched client-side from /api/resource/admin/all — the API scopes
+// the list by role (org admins see only their own posts).
+export default function ResourcesPage() {
+  return <ResourcesClient />;
 }
-
-export default async function ResourcesPage() {
-  const resources = await getResources();
-
-  return <ResourcesClient resources={resources} />;
-}
-

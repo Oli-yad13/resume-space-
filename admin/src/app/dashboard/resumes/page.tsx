@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireSuperAdmin } from "@/lib/session";
 import ResumesClient from "./resumes-client";
 
 async function getResumes() {
@@ -24,6 +25,7 @@ async function getResumes() {
 }
 
 export default async function ResumesPage() {
+  await requireSuperAdmin();
   const resumes = await getResumes();
 
   return <ResumesClient resumes={resumes} />;

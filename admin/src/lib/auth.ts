@@ -1,47 +1,70 @@
-/**
- * Authentication utilities for the admin dashboard
- */
+"use client";
 
-export const AUTH_KEY = "isAdmin";
+// Real authentication against the NestJS backend (proxied through /api).
+// Sessions are httpOnly cookies set by the server — nothing is stored in
+// localStorage; the admin role check happens via GET /api/user/me.
 
-/**
- * Check if user is authenticated
- */
-export function isAuthenticated(): boolean {
-  if (typeof window === "undefined") return false;
-  return localStorage.getItem(AUTH_KEY) === "true";
+import { api } from "./api";
+import type { SessionUser } from "./types";
+
+export type LoginResult =
+  | { status: "authenticated"; user: SessionUser }
+  | { status: "2fa_required" };
+
+export async function login(identifier: string, password: string): Promise<LoginResult> {
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ identifier, password }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Invalid email or password.");
+  }
+
+  return (await response.json()) as LoginResult;
 }
 
-/**
- * Set authentication status
- */
-export function setAuthenticated(value: boolean): void {
-  if (typeof window === "undefined") return;
+export async function verify2fa(code: string): Promise<SessionUser> {
+  const response = await fetch("/api/auth/2fa/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
+  });
 
-  if (value) {
-    localStorage.setItem(AUTH_KEY, "true");
-  } else {
-    localStorage.removeItem(AUTH_KEY);
+  if (!response.ok) {
+    throw new Error("Invalid two-factor code.");
+  }
+
+  return (await response.json()) as SessionUser;
+}
+
+export async function getMe(): Promise<SessionUser | null> {
+  try {
+    return await api<SessionUser>("/api/user/me");
+  } catch {
+    return null;
   }
 }
 
-/**
- * Logout user
- */
-export function logout(): void {
-  setAuthenticated(false);
+/** Silently refresh the session cookie. Returns true if a session exists. */
+export async function refreshSession(): Promise<boolean> {
+  try {
+    const response = await fetch("/api/auth/refresh", { method: "POST" });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
-/**
- * Temporary local login. Replace with backend-backed admin auth before production.
- */
-export function login(email: string, password: string): boolean {
-  const configuredEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-  const configuredPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
-
-  if (configuredEmail && configuredPassword && email === configuredEmail && password === configuredPassword) {
-    setAuthenticated(true);
-    return true;
+export async function logout(): Promise<void> {
+  try {
+    await fetch("/api/auth/logout", { method: "POST" });
+  } catch {
+    // Ignore — cookies are cleared server-side; worst case they expire.
   }
-  return false;
+}
+
+export function isAdminRole(user: SessionUser | null): boolean {
+  return user?.role === "ORG_ADMIN" || user?.role === "SUPER_ADMIN";
 }

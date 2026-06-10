@@ -18,6 +18,12 @@ export const experienceLevelSchema = z.enum([
   "EXECUTIVE",
 ]);
 
+// Review state for org-posted content: public visibility requires
+// published === true AND status === "APPROVED".
+export const postStatusSchema = z.enum(["PENDING", "APPROVED", "REJECTED"]);
+
+export type PostStatus = z.infer<typeof postStatusSchema>;
+
 export const jobSchema = z.object({
   id: z.string().cuid(),
   title: z.string(),
@@ -37,6 +43,11 @@ export const jobSchema = z.object({
   experienceLevel: experienceLevelSchema,
   featured: z.boolean(),
   published: z.boolean(),
+  status: postStatusSchema.default("APPROVED"),
+  postedById: z.string().nullable().optional(),
+  organization: z.string().nullable().optional(),
+  reviewNote: z.string().nullable().optional(),
+  reviewedAt: z.date().nullable().optional(),
   expiresAt: z.date().nullable().optional(),
   views: z.number().int().min(0),
   createdAt: z.date(),

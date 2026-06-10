@@ -1,343 +1,312 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Plus, Search, Briefcase, MapPin, Users, Eye, Calendar, Trash2, Edit, Check, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  Briefcase,
+  Check,
+  Edit,
+  Eye,
+  MapPin,
+  Plus,
+  Search,
+  Star,
+  Trash2,
+  Users,
+  X,
+} from "lucide-react";
+
+import { useAuth } from "@/components/providers/auth-provider";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { ReviewModal } from "@/components/ui/ReviewModal";
+import { StatCard } from "@/components/ui/StatCard";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { api } from "@/lib/api";
+import type { AdminJob, PostStatus } from "@/lib/types";
 
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  locationType: string;
-  employmentType: string;
-  experienceLevel: string;
-  category: string;
-  featured: boolean;
-  published: boolean;
-  views: number;
-  createdAt: Date;
-  _count: {
-    applications: number;
-  };
-}
-
-interface JobsClientProps {
-  jobs: Job[];
-}
-
-export function JobsClient({ jobs }: JobsClientProps) {
+export function JobsClient() {
+  const { isSuper } = useAuth();
+  const [jobs, setJobs] = useState<AdminJob[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterPublished, setFilterPublished] = useState<"all" | "published" | "draft">("all");
-  const [filterType, setFilterType] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | PostStatus>("all");
+  const [review, setReview] = useState<{ job: AdminJob; verdict: "APPROVED" | "REJECTED" } | null>(
+    null,
+  );
+
+  const load = useCallback(async () => {
+    try {
+      setJobs(await api<AdminJob[]>("/api/job/admin/all"));
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load jobs.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const filteredJobs = jobs.filter((job) => {
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.category.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesPublished =
-      filterPublished === "all"
-        ? true
-        : filterPublished === "published"
-          ? job.published
-          : !job.published;
-
-    const matchesType = filterType === "all" ? true : job.employmentType === filterType;
-
-    return matchesSearch && matchesPublished && matchesType;
+      job.title.toLowerCase().includes(q) ||
+      job.company.toLowerCase().includes(q) ||
+      job.category.toLowerCase().includes(q) ||
+      (job.organization ?? "").toLowerCase().includes(q);
+    const matchesStatus = filterStatus === "all" ? true : job.status === filterStatus;
+    return matchesSearch && matchesStatus;
   });
 
   const stats = {
     total: jobs.length,
-    published: jobs.filter((j) => j.published).length,
-    featured: jobs.filter((j) => j.featured).length,
-    applications: jobs.reduce((sum, j) => sum + j._count.applications, 0),
+    pending: jobs.filter((j) => j.status === "PENDING").length,
+    approved: jobs.filter((j) => j.status === "APPROVED").length,
+    applications: jobs.reduce((sum, j) => sum + (j._count?.applications ?? 0), 0),
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this job?")) return;
-
+    if (!confirm("Delete this job posting? This cannot be undone.")) return;
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/job/${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        alert("Job deleted successfully!");
-        window.location.reload();
-      } else {
-        alert("Failed to delete job");
-      }
-    } catch (error) {
-      console.error("Error deleting job:", error);
-      alert("Failed to delete job");
+      await api(`/api/job/${id}`, { method: "DELETE" });
+      await load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete job.");
     }
   };
 
   const handleTogglePublish = async (id: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/job/${id}/toggle-publish`, {
-        method: "PATCH",
-      });
-
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        alert("Failed to toggle publish status");
-      }
-    } catch (error) {
-      console.error("Error toggling publish status:", error);
-      alert("Failed to toggle publish status");
+      await api(`/api/job/${id}/toggle-publish`, { method: "PATCH" });
+      await load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to update job.");
     }
   };
 
   const handleToggleFeatured = async (id: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/job/${id}/toggle-featured`, {
-        method: "PATCH",
-      });
-
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        alert("Failed to toggle featured status");
-      }
-    } catch (error) {
-      console.error("Error toggling featured status:", error);
-      alert("Failed to toggle featured status");
+      await api(`/api/job/${id}/toggle-featured`, { method: "PATCH" });
+      await load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to update job.");
     }
   };
 
+  const handleReview = async (jobId: string, verdict: "APPROVED" | "REJECTED", note: string) => {
+    await api(`/api/job/${jobId}/review`, {
+      method: "PATCH",
+      json: { status: verdict, ...(note ? { reviewNote: note } : {}) },
+    });
+    await load();
+  };
+
+  const statCards = [
+    { label: "Total", value: stats.total },
+    { label: "Pending review", value: stats.pending },
+    { label: "Approved", value: stats.approved },
+    { label: "Applications", value: stats.applications },
+  ];
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header row */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Jobs Management</h1>
-          <p className="mt-1 text-sm text-zinc-400">Manage job postings and applications</p>
+        <div className="grid grid-cols-4 gap-4">
+          {statCards.map((s) => (
+            <StatCard key={s.label} label={s.label} value={s.value} />
+          ))}
         </div>
         <Link href="/dashboard/jobs/new">
           <Button size="sm" className="gap-2">
             <Plus className="h-4 w-4" />
-            Create Job
+            Post a job
           </Button>
         </Link>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-              <Briefcase className="h-5 w-5 text-blue-500" />
-            </div>
-            <div>
-              <p className="text-sm text-zinc-400">Total Jobs</p>
-              <p className="text-2xl font-bold text-white">{stats.total}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
-              <Check className="h-5 w-5 text-green-500" />
-            </div>
-            <div>
-              <p className="text-sm text-zinc-400">Published</p>
-              <p className="text-2xl font-bold text-white">{stats.published}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-500/10">
-              <Calendar className="h-5 w-5 text-yellow-500" />
-            </div>
-            <div>
-              <p className="text-sm text-zinc-400">Featured</p>
-              <p className="text-2xl font-bold text-white">{stats.featured}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
-              <Users className="h-5 w-5 text-purple-500" />
-            </div>
-            <div>
-              <p className="text-sm text-zinc-400">Applications</p>
-              <p className="text-2xl font-bold text-white">{stats.applications}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="flex flex-col gap-4 rounded-lg border border-zinc-800 bg-zinc-900 p-4 sm:flex-row">
-        {/* Search */}
+      {/* Search + filter */}
+      <div className="flex gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
           <input
             type="text"
-            placeholder="Search jobs..."
+            placeholder="Search by title, company, category…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-10 w-full rounded-lg border border-zinc-700 bg-zinc-800 pl-9 pr-4 text-sm text-white placeholder:text-zinc-400 focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+            className="h-9 w-full rounded-md border border-zinc-200 bg-white pl-9 pr-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-brand focus:outline-none"
           />
         </div>
-
-        {/* Status Filter */}
         <select
-          value={filterPublished}
-          onChange={(e) => setFilterPublished(e.target.value as "all" | "published" | "draft")}
-          className="h-10 rounded-lg border border-zinc-700 bg-zinc-800 px-4 text-sm text-white focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value as "all" | PostStatus)}
+          className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-900 focus:border-brand focus:outline-none"
         >
-          <option value="all">All Status</option>
-          <option value="published">Published</option>
-          <option value="draft">Draft</option>
-        </select>
-
-        {/* Type Filter */}
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="h-10 rounded-lg border border-zinc-700 bg-zinc-800 px-4 text-sm text-white focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
-        >
-          <option value="all">All Types</option>
-          <option value="FULL_TIME">Full Time</option>
-          <option value="PART_TIME">Part Time</option>
-          <option value="CONTRACT">Contract</option>
-          <option value="INTERNSHIP">Internship</option>
-          <option value="FREELANCE">Freelance</option>
+          <option value="all">All statuses</option>
+          <option value="PENDING">Pending review</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
         </select>
       </div>
 
-      {/* Jobs Table */}
-      <div className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+      {error && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="overflow-hidden rounded-md border border-zinc-200 bg-white">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="border-b border-zinc-800 bg-zinc-800/50">
+          <table className="w-full text-sm">
+            <thead className="border-b border-zinc-200 bg-zinc-50/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
-                  Job
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
-                  Location
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
-                  Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
-                  Stats
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-400">
-                  Actions
-                </th>
+                {["Job", isSuper ? "Posted by" : "Location", "Type", "Stats", "Status", ""].map(
+                  (h, i) => (
+                    <th
+                      key={i}
+                      className="px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+                    >
+                      {h}
+                    </th>
+                  ),
+                )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800">
-              {filteredJobs.length === 0 ? (
+            <tbody className="divide-y divide-zinc-100">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-sm text-zinc-400">
+                    Loading…
+                  </td>
+                </tr>
+              ) : filteredJobs.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center">
-                    <Briefcase className="mx-auto h-12 w-12 text-zinc-700" />
-                    <p className="mt-4 text-sm text-zinc-400">No jobs found</p>
+                    <Briefcase className="mx-auto h-10 w-10 text-zinc-200" />
+                    <p className="mt-3 text-sm text-zinc-400">No jobs found</p>
                   </td>
                 </tr>
               ) : (
                 filteredJobs.map((job) => (
-                  <tr key={job.id} className="hover:bg-zinc-800/50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-1">
-                          <div className="font-medium text-white">{job.title}</div>
-                          <div className="mt-1 flex items-center gap-2 text-sm text-zinc-400">
-                            <span>{job.company}</span>
-                            <span>•</span>
-                            <span className="rounded bg-zinc-800 px-2 py-0.5 text-xs">
-                              {job.category}
-                            </span>
+                  <tr key={job.id} className="hover:bg-zinc-50/50">
+                    <td className="px-5 py-3.5">
+                      <div className="font-medium text-zinc-900">{job.title}</div>
+                      <div className="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500">
+                        <span>{job.company}</span>
+                        <span>·</span>
+                        <span>{job.category}</span>
+                      </div>
+                      {job.reviewNote && job.status === "REJECTED" && (
+                        <p className="mt-1 max-w-md text-xs text-red-600">
+                          Review note: {job.reviewNote}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      {isSuper ? (
+                        <div className="text-sm text-zinc-700">
+                          {job.organization ?? job.postedBy?.organization ?? "Resume Space"}
+                          <div className="text-xs text-zinc-400">
+                            {job.postedBy?.name ?? "—"}
                           </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5 text-zinc-600">
+                          <MapPin className="h-3.5 w-3.5" />
+                          {job.location}
+                        </div>
+                      )}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-sm text-zinc-300">
-                        <MapPin className="h-4 w-4" />
-                        <span>{job.location}</span>
-                      </div>
-                      <div className="mt-1 text-xs text-zinc-400">
-                        {job.locationType.replace("_", " ")}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-zinc-300">
-                        {job.employmentType.replace("_", " ")}
-                      </div>
-                      <div className="mt-1 text-xs text-zinc-400">
+                    <td className="px-5 py-3.5 text-zinc-600">
+                      {job.employmentType.replace("_", " ")}
+                      <div className="text-xs text-zinc-400">
                         {job.experienceLevel.replace("_", " ")}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3 text-sm">
-                        <div className="flex items-center gap-1 text-zinc-400">
-                          <Eye className="h-4 w-4" />
-                          <span>{job.views}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-zinc-400">
-                          <Users className="h-4 w-4" />
-                          <span>{job._count.applications}</span>
-                        </div>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-3 text-zinc-500">
+                        <span className="flex items-center gap-1">
+                          <Eye className="h-3.5 w-3.5" />
+                          {job.views}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3.5 w-3.5" />
+                          {job._count?.applications ?? 0}
+                        </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
-                        <button
-                          onClick={() => handleTogglePublish(job.id)}
-                          className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium ${
-                            job.published
-                              ? "bg-green-500/10 text-green-500"
-                              : "bg-yellow-500/10 text-yellow-500"
-                          }`}
-                        >
-                          {job.published ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                          {job.published ? "Published" : "Draft"}
-                        </button>
-                        {job.featured && (
-                          <button
-                            onClick={() => handleToggleFeatured(job.id)}
-                            className="inline-flex items-center gap-1 rounded bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-500"
-                          >
-                            ★ Featured
-                          </button>
+                    <td className="px-5 py-3.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <StatusBadge status={job.status} />
+                        {!job.published && <Badge>Unpublished</Badge>}
+                        {job.featured && <Badge variant="info">Featured</Badge>}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {isSuper && job.status === "PENDING" && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1 text-emerald-700"
+                              onClick={() => setReview({ job, verdict: "APPROVED" })}
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1 text-red-600"
+                              onClick={() => setReview({ job, verdict: "REJECTED" })}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                              Reject
+                            </Button>
+                          </>
                         )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                        {isSuper && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title={job.featured ? "Unfeature" : "Feature"}
+                            onClick={() => void handleToggleFeatured(job.id)}
+                          >
+                            <Star
+                              className={`h-4 w-4 ${job.featured ? "fill-blue-500 text-blue-500" : ""}`}
+                            />
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title={job.published ? "Unpublish" : "Publish"}
+                          onClick={() => void handleTogglePublish(job.id)}
+                        >
+                          {job.published ? <Eye className="h-4 w-4" /> : <Eye className="h-4 w-4 text-zinc-300" />}
+                        </Button>
                         <Link href={`/dashboard/jobs/${job.id}/applications`}>
-                          <Button size="sm" variant="outline" className="gap-1">
-                            <Users className="h-3 w-3" />
-                            {job._count.applications}
+                          <Button size="sm" variant="ghost" title="Applications">
+                            <Users className="h-4 w-4" />
                           </Button>
                         </Link>
                         <Link href={`/dashboard/jobs/${job.id}/edit`}>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="ghost" title="Edit">
                             <Edit className="h-4 w-4" />
                           </Button>
                         </Link>
                         <Button
                           size="sm"
-                          variant="error"
-                          onClick={() => handleDelete(job.id)}
+                          variant="ghost"
+                          title="Delete"
+                          className="text-red-600"
+                          onClick={() => void handleDelete(job.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -351,11 +320,19 @@ export function JobsClient({ jobs }: JobsClientProps) {
         </div>
       </div>
 
-      {/* Results Count */}
-      <div className="text-center text-sm text-zinc-400">
+      <p className="text-center text-xs text-zinc-400">
         Showing {filteredJobs.length} of {jobs.length} jobs
-      </div>
+      </p>
+
+      {review && (
+        <ReviewModal
+          isOpen
+          verdict={review.verdict}
+          title={`${review.job.title} — ${review.job.company}`}
+          onClose={() => setReview(null)}
+          onConfirm={(note) => handleReview(review.job.id, review.verdict, note)}
+        />
+      )}
     </div>
   );
 }
-

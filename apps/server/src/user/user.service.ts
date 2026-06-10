@@ -91,4 +91,26 @@ export class UserService {
       this.prisma.user.delete({ where: { id } }),
     ]);
   }
+
+  // Super admin: list all organization admin accounts with their post counts.
+  findOrgAccounts() {
+    return this.prisma.user.findMany({
+      where: { role: "ORG_ADMIN" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        username: true,
+        organization: true,
+        disabled: true,
+        createdAt: true,
+        _count: { select: { jobsPosted: true, resourcesPosted: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  updateById(id: string, data: Prisma.UserUpdateArgs["data"]): Promise<User> {
+    return this.prisma.user.update({ where: { id }, data });
+  }
 }

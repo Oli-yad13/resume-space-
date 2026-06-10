@@ -14,6 +14,10 @@ export const usernameSchema = z
   })
   .transform((value) => value.toLowerCase());
 
+export const roleSchema = z.enum(["USER", "ORG_ADMIN", "SUPER_ADMIN"]);
+
+export type Role = z.infer<typeof roleSchema>;
+
 export const userSchema = z.object({
   id: idSchema,
   name: z.string().min(1).max(255),
@@ -26,6 +30,10 @@ export const userSchema = z.object({
   locale: z.string().default("en-US"),
   emailVerified: z.boolean().default(false),
   twoFactorEnabled: z.boolean().default(false),
+  // Defaults keep parses of pre-role user objects passing (client auth store).
+  role: roleSchema.default("USER"),
+  organization: z.string().nullable().default(null),
+  disabled: z.boolean().default(false),
   provider: z.enum(["email", "github", "google", "openid"]).default("email"),
   createdAt: dateSchema,
   updatedAt: dateSchema,

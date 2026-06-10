@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Pagination } from "@/components/ui/Pagination";
+import { formatDate } from "@/lib/utils";
 import { Users } from "lucide-react";
 
 interface User {
@@ -59,7 +60,9 @@ export default function DashboardClient({ recentUsers }: DashboardClientProps) {
                       Joined
                     </p>
                     <p className="text-sm font-medium text-zinc-700">
-                      {new Date(user.createdAt).toLocaleDateString()}
+                      {/* Fixed locale — bare toLocaleDateString() differs between
+                          the SSR server and the browser and breaks hydration. */}
+                      {formatDate(user.createdAt)}
                     </p>
                   </div>
                 </div>

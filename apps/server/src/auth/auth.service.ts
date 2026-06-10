@@ -33,6 +33,11 @@ export class AuthService {
     return bcryptjs.hash(password, 10);
   }
 
+  // Used by super-admin account management (org password resets).
+  hashPassword(password: string): Promise<string> {
+    return this.hash(password);
+  }
+
   private compare(password: string, hash: string): Promise<boolean> {
     return bcryptjs.compare(password, hash);
   }
@@ -134,6 +139,11 @@ export class AuthService {
         throw new BadRequestException(ErrorMessage.OAuthUser);
       }
 
+      // Disabled accounts (revoked organization admins) cannot sign in.
+      if (user.disabled) {
+        throw new BadRequestException(ErrorMessage.InvalidCredentials);
+      }
+
       await this.validatePassword(password, user.secrets.password);
       await this.setLastSignedIn(user.email);
 
@@ -141,6 +151,63 @@ export class AuthService {
     } catch {
       throw new BadRequestException(ErrorMessage.InvalidCredentials);
     }
+  }
+
+  /**
+   * Provision an ORG_ADMIN account (created by the super admin and handed to
+   * a trusted organization). Email is pre-verified — these are not
+   * self-service signups.
+   */
+  async createOrgAccount(data: {
+    name: string;
+    organization: string;
+    email: string;
+    password: string;
+  }): Promise<UserWithSecrets> {
+    const hashedPassword = await this.hash(data.password);
+
+    const baseUsername =
+      data.organization
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 48) || "org";
+
+    // Retry with a random suffix on username collisions (P2002).
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const username =
+        attempt === 0
+          ? baseUsername
+          : `${baseUsername}-${randomBytes(3).toString("hex")}`;
+
+      try {
+        return await this.userService.create({
+          name: data.name,
+          email: data.email,
+          username,
+          locale: "en-US",
+          provider: "email",
+          emailVerified: true,
+          role: "ORG_ADMIN",
+          organization: data.organization,
+          secrets: { create: { password: hashedPassword } },
+        });
+      } catch (error) {
+        if (error instanceof PrismaClientKnownRequestError && error.code === "P2002") {
+          const target = (error.meta?.target ?? []) as string[];
+          // Email collisions are terminal; username collisions retry.
+          if (target.includes("email")) {
+            throw new BadRequestException(ErrorMessage.UserAlreadyExists);
+          }
+          continue;
+        }
+
+        Logger.error(error);
+        throw new InternalServerErrorException(error);
+      }
+    }
+
+    throw new BadRequestException(ErrorMessage.UserAlreadyExists);
   }
 
   // Password Reset Flows

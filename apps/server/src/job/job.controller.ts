@@ -9,7 +9,16 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { CreateApplicationDto, CreateJobDto, UpdateApplicationStatusDto, UpdateJobDto, UserWithSecrets } from "@resume-space/dto";
+import {
+  CreateApplicationDto,
+  CreateJobDto,
+  ReviewPostDto,
+  UpdateApplicationStatusDto,
+  UpdateJobDto,
+  UserWithSecrets,
+} from "@resume-space/dto";
+import { Roles } from "../auth/decorators/roles.decorator";
+import { RolesGuard } from "../auth/guards/roles.guard";
 import { TwoFactorGuard } from "../auth/guards/two-factor.guard";
 import { User } from "../user/decorators/user.decorator";
 import { JobService } from "./job.service";
@@ -111,62 +120,97 @@ export class JobController {
   }
 
   // =============== ADMIN ENDPOINTS ===============
-  // Authenticated via TwoFactorGuard. A dedicated admin/role guard is still a TODO.
+  // Guard order matters: TwoFactorGuard populates request.user, RolesGuard
+  // then checks it. Org admins manage only their own posts (enforced in the
+  // service); SUPER_ADMIN passes every gate.
 
   @Get("admin/all")
-  @UseGuards(TwoFactorGuard)
-  async findAllAdmin() {
-    return this.jobService.findAllAdmin();
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("ORG_ADMIN")
+  async findAllAdmin(@User() user: UserWithSecrets, @Query("status") status?: string) {
+    return this.jobService.findAllAdmin(user, { status });
+  }
+
+  // Loads a job in any review status for edit forms (the public GET /job/:id
+  // 404s non-approved posts). Must be declared before GET ":id".
+  @Get("admin/:id")
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("ORG_ADMIN")
+  async findOneAdmin(@User() user: UserWithSecrets, @Param("id") id: string) {
+    return this.jobService.findOneAdmin(user, id);
   }
 
   @Post()
-  @UseGuards(TwoFactorGuard)
-  async create(@Body() dto: CreateJobDto) {
-    return this.jobService.create(dto);
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("ORG_ADMIN")
+  async create(@User() user: UserWithSecrets, @Body() dto: CreateJobDto) {
+    return this.jobService.create(user, dto);
   }
 
-  @Patch(":id")
-  @UseGuards(TwoFactorGuard)
-  async update(@Param("id") id: string, @Body() dto: UpdateJobDto) {
-    return this.jobService.update(id, dto);
+  @Patch("applications/:id/status")
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("ORG_ADMIN")
+  async updateApplicationStatus(
+    @User() user: UserWithSecrets,
+    @Param("id") applicationId: string,
+    @Body() dto: UpdateApplicationStatusDto,
+  ) {
+    return this.jobService.updateApplicationStatus(user, applicationId, dto);
   }
 
-  @Delete(":id")
-  @UseGuards(TwoFactorGuard)
-  async delete(@Param("id") id: string) {
-    return this.jobService.delete(id);
+  @Patch(":id/review")
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("SUPER_ADMIN")
+  async review(
+    @User() user: UserWithSecrets,
+    @Param("id") id: string,
+    @Body() dto: ReviewPostDto,
+  ) {
+    return this.jobService.review(user, id, dto);
   }
 
   @Patch(":id/toggle-publish")
-  @UseGuards(TwoFactorGuard)
-  async togglePublish(@Param("id") id: string) {
-    return this.jobService.togglePublish(id);
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("ORG_ADMIN")
+  async togglePublish(@User() user: UserWithSecrets, @Param("id") id: string) {
+    return this.jobService.togglePublish(user, id);
   }
 
   @Patch(":id/toggle-featured")
-  @UseGuards(TwoFactorGuard)
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("SUPER_ADMIN")
   async toggleFeatured(@Param("id") id: string) {
     return this.jobService.toggleFeatured(id);
   }
 
+  @Patch(":id")
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("ORG_ADMIN")
+  async update(
+    @User() user: UserWithSecrets,
+    @Param("id") id: string,
+    @Body() dto: UpdateJobDto,
+  ) {
+    return this.jobService.update(user, id, dto);
+  }
+
+  @Delete(":id")
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("ORG_ADMIN")
+  async delete(@User() user: UserWithSecrets, @Param("id") id: string) {
+    return this.jobService.delete(user, id);
+  }
+
   @Get(":id/applications")
-  @UseGuards(TwoFactorGuard)
-  async getJobApplications(@Param("id") jobId: string) {
-    return this.jobService.getJobApplications(jobId);
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("ORG_ADMIN")
+  async getJobApplications(@User() user: UserWithSecrets, @Param("id") jobId: string) {
+    return this.jobService.getJobApplications(user, jobId);
   }
 
   // Public: Get single job
   @Get(":id")
   async findOne(@Param("id") id: string) {
     return this.jobService.findOne(id);
-  }
-
-  @Patch("applications/:id/status")
-  @UseGuards(TwoFactorGuard)
-  async updateApplicationStatus(
-    @Param("id") applicationId: string,
-    @Body() dto: UpdateApplicationStatusDto,
-  ) {
-    return this.jobService.updateApplicationStatus(applicationId, dto);
   }
 }

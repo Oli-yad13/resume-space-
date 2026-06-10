@@ -1,11 +1,26 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { Prisma } from "@prisma/client";
-import { CreateApplicationDto, CreateJobDto, UpdateApplicationStatusDto, UpdateJobDto } from "@resume-space/dto";
+import {
+  CreateApplicationDto,
+  CreateJobDto,
+  ReviewPostDto,
+  UpdateApplicationStatusDto,
+  UpdateJobDto,
+  UserDto,
+} from "@resume-space/dto";
 import { ResumeData } from "@resume-space/schema";
 import { PrismaService } from "nestjs-prisma";
 
 import { GeminiService } from "../gemini/gemini.service";
 import { ResumeService } from "../resume/resume.service";
+
+// The fields the admin endpoints need from the authenticated user.
+type Actor = Pick<UserDto, "id" | "role" | "organization">;
 
 @Injectable()
 export class JobService {
@@ -28,6 +43,7 @@ export class JobService {
   }) {
     const where: Prisma.JobWhereInput = {
       published: true,
+      status: "APPROVED",
       OR: params.search
         ? [
             { title: { contains: params.search, mode: "insensitive" } },
@@ -55,16 +71,51 @@ export class JobService {
     return { jobs, total };
   }
 
-  // Admin: Get all jobs (including unpublished)
-  async findAllAdmin() {
+  // Ownership rule, centralized: org admins manage only their OWN posts;
+  // the super admin manages everything (including legacy posts with no owner).
+  private assertCanManage(user: Actor, job: { postedById: string | null }) {
+    if (user.role === "SUPER_ADMIN") return;
+    if (job.postedById !== user.id) {
+      throw new ForbiddenException("You can only manage your own job posts.");
+    }
+  }
+
+  // Admin: Get all jobs — org admins see their own posts (any status),
+  // the super admin sees everything with an optional status filter.
+  async findAllAdmin(user: Actor, params?: { status?: string }) {
+    const where: Prisma.JobWhereInput =
+      user.role === "SUPER_ADMIN"
+        ? { status: params?.status as Prisma.JobWhereInput["status"] }
+        : { postedById: user.id };
+
     return this.prisma.job.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       include: {
         _count: {
           select: { applications: true },
         },
+        postedBy: {
+          select: { id: true, name: true, organization: true },
+        },
       },
     });
+  }
+
+  // Admin: Load a single job regardless of status (edit forms) with ownership check.
+  async findOneAdmin(user: Actor, id: string) {
+    const job = await this.prisma.job.findUnique({
+      where: { id },
+      include: {
+        _count: { select: { applications: true } },
+        postedBy: { select: { id: true, name: true, organization: true } },
+      },
+    });
+
+    if (!job) throw new NotFoundException("Job not found");
+    this.assertCanManage(user, job);
+
+    return job;
   }
 
   // Public: Get single job by ID
@@ -78,7 +129,7 @@ export class JobService {
       },
     });
 
-    if (!job || !job.published) {
+    if (!job || !job.published || job.status !== "APPROVED") {
       throw new NotFoundException("Job not found");
     }
 
@@ -94,7 +145,7 @@ export class JobService {
   // Get categories
   async getCategories() {
     const jobs = await this.prisma.job.findMany({
-      where: { published: true },
+      where: { published: true, status: "APPROVED" },
       select: { category: true },
       distinct: ["category"],
     });
@@ -104,21 +155,22 @@ export class JobService {
 
   // Get job statistics
   async getStats() {
+    const publicWhere = { published: true, status: "APPROVED" as const };
     const [total, byCategory, byLocationType, byEmploymentType] = await Promise.all([
-      this.prisma.job.count({ where: { published: true } }),
+      this.prisma.job.count({ where: publicWhere }),
       this.prisma.job.groupBy({
         by: ["category"],
-        where: { published: true },
+        where: publicWhere,
         _count: true,
       }),
       this.prisma.job.groupBy({
         by: ["locationType"],
-        where: { published: true },
+        where: publicWhere,
         _count: true,
       }),
       this.prisma.job.groupBy({
         by: ["employmentType"],
-        where: { published: true },
+        where: publicWhere,
         _count: true,
       }),
     ]);
@@ -131,36 +183,61 @@ export class JobService {
     };
   }
 
-  // Admin: Create job
-  async create(data: CreateJobDto) {
+  // Admin: Create job. Org-admin posts start PENDING and only go public after
+  // super-admin approval; super-admin posts are approved immediately.
+  async create(user: Actor, data: CreateJobDto) {
+    const isSuper = user.role === "SUPER_ADMIN";
+
     return this.prisma.job.create({
       data: {
         ...data,
+        // Only the super admin can feature posts.
+        featured: isSuper ? data.featured : false,
+        status: isSuper ? "APPROVED" : "PENDING",
+        postedById: user.id,
+        organization: user.organization ?? null,
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
       },
     });
   }
 
-  // Admin: Update job
-  async update(id: string, data: UpdateJobDto) {
+  // Admin: Update job. When an org admin edits a post that has already been
+  // reviewed (APPROVED or REJECTED), it goes back to PENDING — nothing changes
+  // on the public site without a fresh super-admin sign-off.
+  async update(user: Actor, id: string, data: UpdateJobDto) {
+    const job = await this.prisma.job.findUnique({ where: { id } });
+    if (!job) throw new NotFoundException("Job not found");
+    this.assertCanManage(user, job);
+
+    const isSuper = user.role === "SUPER_ADMIN";
+    const resubmit = !isSuper && job.status !== "PENDING";
+
     return this.prisma.job.update({
       where: { id },
       data: {
         ...data,
+        featured: isSuper ? data.featured : undefined,
+        status: resubmit ? "PENDING" : undefined,
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
       },
     });
   }
 
   // Admin: Delete job
-  async delete(id: string) {
+  async delete(user: Actor, id: string) {
+    const job = await this.prisma.job.findUnique({ where: { id } });
+    if (!job) throw new NotFoundException("Job not found");
+    this.assertCanManage(user, job);
+
     return this.prisma.job.delete({ where: { id } });
   }
 
-  // Admin: Toggle publish status
-  async togglePublish(id: string) {
+  // Admin: Toggle publish status — the owner's own on/off switch; does NOT
+  // touch the review status.
+  async togglePublish(user: Actor, id: string) {
     const job = await this.prisma.job.findUnique({ where: { id } });
     if (!job) throw new NotFoundException("Job not found");
+    this.assertCanManage(user, job);
 
     return this.prisma.job.update({
       where: { id },
@@ -168,7 +245,7 @@ export class JobService {
     });
   }
 
-  // Admin: Toggle featured status
+  // Super admin: Toggle featured status
   async toggleFeatured(id: string) {
     const job = await this.prisma.job.findUnique({ where: { id } });
     if (!job) throw new NotFoundException("Job not found");
@@ -176,6 +253,22 @@ export class JobService {
     return this.prisma.job.update({
       where: { id },
       data: { featured: !job.featured },
+    });
+  }
+
+  // Super admin: Approve or reject a post (with an optional note for the org).
+  async review(user: Actor, id: string, data: ReviewPostDto) {
+    const job = await this.prisma.job.findUnique({ where: { id } });
+    if (!job) throw new NotFoundException("Job not found");
+
+    return this.prisma.job.update({
+      where: { id },
+      data: {
+        status: data.status,
+        reviewNote: data.reviewNote ?? null,
+        reviewedAt: new Date(),
+        reviewedById: user.id,
+      },
     });
   }
 
@@ -191,7 +284,7 @@ export class JobService {
       where: { id: data.jobId },
     });
 
-    if (!job || !job.published) {
+    if (!job || !job.published || job.status !== "APPROVED") {
       throw new NotFoundException("Job not found");
     }
 
@@ -249,8 +342,12 @@ export class JobService {
     });
   }
 
-  // Admin: Get applications for a job
-  async getJobApplications(jobId: string) {
+  // Admin: Get applications for a job — org admins only for jobs they own.
+  async getJobApplications(user: Actor, jobId: string) {
+    const job = await this.prisma.job.findUnique({ where: { id: jobId } });
+    if (!job) throw new NotFoundException("Job not found");
+    this.assertCanManage(user, job);
+
     return this.prisma.application.findMany({
       where: { jobId },
       include: {
@@ -267,8 +364,19 @@ export class JobService {
     });
   }
 
-  // Admin: Update application status
-  async updateApplicationStatus(applicationId: string, data: UpdateApplicationStatusDto) {
+  // Admin: Update application status — org admins only for their own jobs.
+  async updateApplicationStatus(
+    user: Actor,
+    applicationId: string,
+    data: UpdateApplicationStatusDto,
+  ) {
+    const application = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+      include: { job: { select: { postedById: true } } },
+    });
+    if (!application) throw new NotFoundException("Application not found");
+    this.assertCanManage(user, application.job);
+
     return this.prisma.application.update({
       where: { id: applicationId },
       data,

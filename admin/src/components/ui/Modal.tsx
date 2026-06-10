@@ -39,7 +39,7 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
 
       {/* Modal */}
       <div className="animate-slide-in relative z-10 w-full max-w-md">
-        <div className="mx-4 rounded-xl border border-zinc-200 bg-white shadow-2xl">{children}</div>
+        <div className="mx-4 rounded-md border border-zinc-200 bg-white">{children}</div>
       </div>
     </div>
   );

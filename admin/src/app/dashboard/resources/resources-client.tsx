@@ -1,383 +1,326 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/Table";
-import { Badge } from "@/components/ui/Badge";
-import { Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from "@/components/ui/Modal";
-import { Button } from "@/components/ui/Button";
-import { formatDateTime } from "@/lib/utils";
-import {
-  Search,
-  Download,
-  Plus,
-  Video,
-  FileText,
-  Eye,
-  Edit,
-  Trash2,
-  X,
-  Star,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
 import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import {
+  BookOpen,
+  Check,
+  Edit,
+  Eye,
+  FileText,
+  Plus,
+  Search,
+  Star,
+  Trash2,
+  Video,
+  X,
+} from "lucide-react";
 
-interface Resource {
-  id: string;
-  title: string;
-  description: string;
-  type: "VIDEO" | "ARTICLE";
-  category: string;
-  videoUrl: string | null;
-  featured: boolean;
-  published: boolean;
-  views: number;
-  order: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { useAuth } from "@/components/providers/auth-provider";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { ReviewModal } from "@/components/ui/ReviewModal";
+import { StatCard } from "@/components/ui/StatCard";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { api } from "@/lib/api";
+import type { AdminResource, PostStatus } from "@/lib/types";
 
-interface ResourcesClientProps {
-  resources: Resource[];
-}
-
-export default function ResourcesClient({ resources }: ResourcesClientProps) {
+export default function ResourcesClient() {
+  const { isSuper } = useAuth();
+  const [resources, setResources] = useState<AdminResource[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"ALL" | "VIDEO" | "ARTICLE">("ALL");
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "PUBLISHED" | "DRAFT">("ALL");
-  const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+  const [filterStatus, setFilterStatus] = useState<"all" | PostStatus>("all");
+  const [review, setReview] = useState<{
+    resource: AdminResource;
+    verdict: "APPROVED" | "REJECTED";
+  } | null>(null);
 
-  // Filter resources
-  const filteredResources = resources.filter((resource) => {
+  const load = useCallback(async () => {
+    try {
+      setResources(await api<AdminResource[]>("/api/resource/admin/all"));
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load resources.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const filtered = resources.filter((r) => {
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.category.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesType = typeFilter === "ALL" || resource.type === typeFilter;
-
-    const matchesStatus =
-      statusFilter === "ALL" ||
-      (statusFilter === "PUBLISHED" && resource.published) ||
-      (statusFilter === "DRAFT" && !resource.published);
-
-    return matchesSearch && matchesType && matchesStatus;
+      r.title.toLowerCase().includes(q) ||
+      r.category.toLowerCase().includes(q) ||
+      (r.organization ?? "").toLowerCase().includes(q);
+    const matchesStatus = filterStatus === "all" ? true : r.status === filterStatus;
+    return matchesSearch && matchesStatus;
   });
 
-  // Export to CSV
-  const handleExport = () => {
-    const headers = ["Title", "Type", "Category", "Status", "Featured", "Views", "Created"];
-    const csvData = filteredResources.map((resource) => [
-      resource.title,
-      resource.type,
-      resource.category,
-      resource.published ? "Published" : "Draft",
-      resource.featured ? "Yes" : "No",
-      resource.views.toString(),
-      new Date(resource.createdAt).toLocaleDateString(),
-    ]);
-
-    const csvContent = [
-      headers.join(","),
-      ...csvData.map((row) => row.map((cell) => `"${cell}"`).join(",")),
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `resources-export-${new Date().toISOString().split("T")[0]}.csv`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const stats = {
+    total: resources.length,
+    pending: resources.filter((r) => r.status === "PENDING").length,
+    videos: resources.filter((r) => r.type === "VIDEO").length,
+    articles: resources.filter((r) => r.type === "ARTICLE").length,
   };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this resource? This cannot be undone.")) return;
+    try {
+      await api(`/api/resource/${id}`, { method: "DELETE" });
+      await load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete resource.");
+    }
+  };
+
+  const handleTogglePublish = async (resource: AdminResource) => {
+    try {
+      await api(`/api/resource/${resource.id}/toggle-publish`, {
+        method: "PATCH",
+        json: { published: !resource.published },
+      });
+      await load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to update resource.");
+    }
+  };
+
+  const handleToggleFeatured = async (resource: AdminResource) => {
+    try {
+      await api(`/api/resource/${resource.id}/toggle-featured`, {
+        method: "PATCH",
+        json: { featured: !resource.featured },
+      });
+      await load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to update resource.");
+    }
+  };
+
+  const handleReview = async (id: string, verdict: "APPROVED" | "REJECTED", note: string) => {
+    await api(`/api/resource/${id}/review`, {
+      method: "PATCH",
+      json: { status: verdict, ...(note ? { reviewNote: note } : {}) },
+    });
+    await load();
+  };
+
+  const statCards = [
+    { label: "Total", value: stats.total },
+    { label: "Pending review", value: stats.pending },
+    { label: "Videos", value: stats.videos },
+    { label: "Articles", value: stats.articles },
+  ];
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader className="border-b border-zinc-100">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <CardTitle>All Resources</CardTitle>
-              <p className="mt-2 text-sm text-zinc-500">
-                {filteredResources.length} of {resources.length} resources
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Search Input */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                <input
-                  type="text"
-                  placeholder="Search resources..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-9 w-64 rounded-lg border border-zinc-200 bg-white pl-10 pr-4 text-sm text-zinc-900 placeholder-zinc-400 transition-all duration-200 hover:border-zinc-300 focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+      <div className="flex items-center justify-between">
+        <div className="grid grid-cols-4 gap-4">
+          {statCards.map((s) => (
+            <StatCard key={s.label} label={s.label} value={s.value} />
+          ))}
+        </div>
+        <Link href="/dashboard/resources/new">
+          <Button size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add resource
+          </Button>
+        </Link>
+      </div>
+
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <input
+            type="text"
+            placeholder="Search by title, category…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-9 w-full rounded-md border border-zinc-200 bg-white pl-9 pr-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-brand focus:outline-none"
+          />
+        </div>
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value as "all" | PostStatus)}
+          className="h-9 rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-900 focus:border-brand focus:outline-none"
+        >
+          <option value="all">All statuses</option>
+          <option value="PENDING">Pending review</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
+        </select>
+      </div>
+
+      {error && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-md border border-zinc-200 bg-white">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="border-b border-zinc-200 bg-zinc-50/50">
+              <tr>
+                {["Resource", "Type", isSuper ? "Posted by" : "Category", "Views", "Status", ""].map(
+                  (h, i) => (
+                    <th
+                      key={i}
+                      className="px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500"
+                    >
+                      {h}
+                    </th>
+                  ),
                 )}
-              </div>
-
-              {/* Export Button */}
-              <button
-                onClick={handleExport}
-                className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
-              >
-                <Download className="h-4 w-4" />
-                <span>Export</span>
-              </button>
-
-              {/* Add New Button */}
-              <Link
-                href="/dashboard/resources/new"
-                className="flex items-center gap-2 rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Add Resource</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* Filters */}
-          <div className="mt-4 flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-zinc-700">Type:</span>
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value as any)}
-                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700"
-              >
-                <option value="ALL">All</option>
-                <option value="VIDEO">Videos</option>
-                <option value="ARTICLE">Articles</option>
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-zinc-700">Status:</span>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700"
-              >
-                <option value="ALL">All</option>
-                <option value="PUBLISHED">Published</option>
-                <option value="DRAFT">Draft</option>
-              </select>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="p-0">
-          {filteredResources.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Featured</TableHead>
-                  <TableHead>Views</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredResources.map((resource) => (
-                  <TableRow key={resource.id}>
-                    <TableCell>
-                      <div className="max-w-xs">
-                        <p className="font-medium text-zinc-900 truncate">{resource.title}</p>
-                        <p className="text-xs text-zinc-500 truncate">{resource.description}</p>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-sm text-zinc-400">
+                    Loading…
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center">
+                    <BookOpen className="mx-auto h-10 w-10 text-zinc-200" />
+                    <p className="mt-3 text-sm text-zinc-400">No resources found</p>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((resource) => (
+                  <tr key={resource.id} className="hover:bg-zinc-50/50">
+                    <td className="max-w-md px-5 py-3.5">
+                      <div className="font-medium text-zinc-900">{resource.title}</div>
+                      <div className="mt-0.5 line-clamp-1 text-xs text-zinc-500">
+                        {resource.description}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {resource.type === "VIDEO" ? (
-                        <Badge variant="default" className="flex items-center gap-1 w-fit">
-                          <Video className="h-3 w-3" />
-                          Video
-                        </Badge>
+                      {resource.reviewNote && resource.status === "REJECTED" && (
+                        <p className="mt-1 text-xs text-red-600">
+                          Review note: {resource.reviewNote}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <span className="flex items-center gap-1.5 text-zinc-600">
+                        {resource.type === "VIDEO" ? (
+                          <Video className="h-3.5 w-3.5" />
+                        ) : (
+                          <FileText className="h-3.5 w-3.5" />
+                        )}
+                        {resource.type === "VIDEO" ? "Video" : "Article"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-zinc-600">
+                      {isSuper ? (
+                        <div>
+                          {resource.organization ??
+                            resource.postedBy?.organization ??
+                            "Resume Space"}
+                          <div className="text-xs text-zinc-400">{resource.category}</div>
+                        </div>
                       ) : (
-                        <Badge variant="default" className="flex items-center gap-1 w-fit">
-                          <FileText className="h-3 w-3" />
-                          Article
-                        </Badge>
+                        resource.category
                       )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm text-zinc-700">{resource.category}</span>
-                    </TableCell>
-                    <TableCell>
-                      {resource.published ? (
-                        <Badge variant="success" className="flex items-center gap-1 w-fit">
-                          <CheckCircle className="h-3 w-3" />
-                          Published
-                        </Badge>
-                      ) : (
-                        <Badge variant="warning" className="flex items-center gap-1 w-fit">
-                          <XCircle className="h-3 w-3" />
-                          Draft
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {resource.featured && (
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-zinc-600">
-                        <Eye className="h-3 w-3" />
-                        <span className="text-sm">{resource.views}</span>
+                    </td>
+                    <td className="px-5 py-3.5 text-zinc-500">{resource.views}</td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <StatusBadge status={resource.status} />
+                        {!resource.published && <Badge>Unpublished</Badge>}
+                        {resource.featured && <Badge variant="info">Featured</Badge>}
                       </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-zinc-600">
-                      {formatDateTime(resource.createdAt)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setSelectedResource(resource)}
-                          className="rounded-lg border border-zinc-200 px-2 py-1 text-xs font-medium text-zinc-700 transition-all hover:border-zinc-300 hover:bg-zinc-50"
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {isSuper && resource.status === "PENDING" && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1 text-emerald-700"
+                              onClick={() => setReview({ resource, verdict: "APPROVED" })}
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1 text-red-600"
+                              onClick={() => setReview({ resource, verdict: "REJECTED" })}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        {isSuper && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title={resource.featured ? "Unfeature" : "Feature"}
+                            onClick={() => void handleToggleFeatured(resource)}
+                          >
+                            <Star
+                              className={`h-4 w-4 ${resource.featured ? "fill-blue-500 text-blue-500" : ""}`}
+                            />
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title={resource.published ? "Unpublish" : "Publish"}
+                          onClick={() => void handleTogglePublish(resource)}
                         >
-                          View
-                        </button>
-                        <Link
-                          href={`/dashboard/resources/${resource.id}/edit`}
-                          className="rounded-lg border border-zinc-200 px-2 py-1 text-xs font-medium text-zinc-700 transition-all hover:border-zinc-300 hover:bg-zinc-50"
-                        >
-                          <Edit className="h-3 w-3" />
+                          <Eye
+                            className={`h-4 w-4 ${resource.published ? "" : "text-zinc-300"}`}
+                          />
+                        </Button>
+                        <Link href={`/dashboard/resources/${resource.id}/edit`}>
+                          <Button size="sm" variant="ghost" title="Edit">
+                            <Edit className="h-4 w-4" />
+                          </Button>
                         </Link>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Delete"
+                          className="text-red-600"
+                          onClick={() => void handleDelete(resource.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="rounded-full bg-zinc-100 p-6">
-                <FileText className="h-12 w-12 text-zinc-400" />
-              </div>
-              <p className="mt-4 text-sm font-medium text-zinc-900">
-                {searchQuery || typeFilter !== "ALL" || statusFilter !== "ALL"
-                  ? "No resources found"
-                  : "No resources yet"}
-              </p>
-              <p className="mt-1 text-xs text-zinc-500">
-                {searchQuery || typeFilter !== "ALL" || statusFilter !== "ALL"
-                  ? "Try adjusting your filters"
-                  : "Create your first resource to get started"}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Resource Detail Modal */}
-      {selectedResource && (
-        <Modal isOpen={!!selectedResource} onClose={() => setSelectedResource(null)}>
-          <ModalHeader>
-            <ModalTitle>{selectedResource.title}</ModalTitle>
-          </ModalHeader>
-          <ModalContent>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-                  Description
-                </p>
-                <p className="mt-1 text-sm text-zinc-900">{selectedResource.description}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">Type</p>
-                  <p className="mt-1 text-sm font-medium text-zinc-900">
-                    {selectedResource.type}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-                    Category
-                  </p>
-                  <p className="mt-1 text-sm font-medium text-zinc-900">
-                    {selectedResource.category}
-                  </p>
-                </div>
-              </div>
-
-              {selectedResource.videoUrl && (
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-                    Video URL
-                  </p>
-                  <a
-                    href={selectedResource.videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-1 text-sm text-blue-600 hover:underline"
-                  >
-                    {selectedResource.videoUrl}
-                  </a>
-                </div>
+                    </td>
+                  </tr>
+                ))
               )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-                    Status
-                  </p>
-                  <p className="mt-1">
-                    {selectedResource.published ? (
-                      <Badge variant="success">Published</Badge>
-                    ) : (
-                      <Badge variant="warning">Draft</Badge>
-                    )}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-                    Featured
-                  </p>
-                  <p className="mt-1 text-sm font-medium text-zinc-900">
-                    {selectedResource.featured ? "Yes" : "No"}
-                  </p>
-                </div>
-              </div>
+      <p className="text-center text-xs text-zinc-400">
+        Showing {filtered.length} of {resources.length} resources
+      </p>
 
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">Views</p>
-                <p className="mt-1 text-2xl font-bold text-zinc-900">{selectedResource.views}</p>
-              </div>
-            </div>
-          </ModalContent>
-          <ModalFooter>
-            <Button variant="outline" onClick={() => setSelectedResource(null)}>
-              Close
-            </Button>
-            <Link href={`/dashboard/resources/${selectedResource.id}/edit`}>
-              <Button variant="default">Edit Resource</Button>
-            </Link>
-          </ModalFooter>
-        </Modal>
+      {review && (
+        <ReviewModal
+          isOpen
+          verdict={review.verdict}
+          title={review.resource.title}
+          onClose={() => setReview(null)}
+          onConfirm={(note) => handleReview(review.resource.id, review.verdict, note)}
+        />
       )}
     </div>
   );
 }
-

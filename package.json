@@ -29,6 +29,7 @@
     "prisma:generate": "pnpm prisma:sync-admin && pnpm exec prisma generate",
     "prisma:migrate": "pnpm exec prisma migrate deploy",
     "prisma:migrate:dev": "pnpm exec prisma migrate dev",
+    "seed:admin": "pnpm exec ts-node tools/scripts/seed-admin.ts",
     "seed:resources": "pnpm exec ts-node tools/scripts/seed-resources.ts",
     "seed:jobs": "pnpm exec ts-node tools/scripts/seed-jobs.ts",
     "remove:unavailable": "pnpm exec ts-node tools/scripts/remove-unavailable-videos.ts",

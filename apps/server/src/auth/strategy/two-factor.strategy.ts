@@ -27,6 +27,10 @@ export class TwoFactorStrategy extends PassportStrategy(Strategy, "two-factor") 
   async validate(payload: Payload) {
     const user = await this.userService.findOneById(payload.id);
 
+    // Disabled accounts (e.g. revoked organization admins) lose access
+    // immediately — the user is loaded fresh from the DB on every request.
+    if (user.disabled) return;
+
     // If the user has 2FA disabled, this will follow the same route as JWT Strategy
     if (!user.twoFactorEnabled) return user;
 

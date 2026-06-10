@@ -1,34 +1,14 @@
 import { Metadata } from "next";
+
 import { JobsClient } from "./jobs-client";
-import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
-  title: "Jobs Management",
+  title: "Jobs",
   description: "Manage job postings",
 };
 
-async function getJobs() {
-  try {
-    const jobs = await prisma.job.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        _count: {
-          select: {
-            applications: true,
-          },
-        },
-      },
-    });
-    return jobs;
-  } catch (error) {
-    console.error("Error fetching jobs:", error);
-    return [];
-  }
+// Data is fetched client-side from /api/job/admin/all — the API scopes the
+// list by role (org admins see only their own posts).
+export default function JobsPage() {
+  return <JobsClient />;
 }
-
-export default async function JobsPage() {
-  const jobs = await getJobs();
-
-  return <JobsClient jobs={jobs} />;
-}
-

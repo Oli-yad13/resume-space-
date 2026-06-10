@@ -142,7 +142,7 @@ export default function ResumesClient({ resumes }: ResumesClientProps) {
                   placeholder="Search resumes..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-9 w-64 rounded-lg border border-zinc-200 bg-white pl-10 pr-4 text-sm text-zinc-900 placeholder-zinc-400 transition-all duration-200 hover:border-zinc-300 focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
+                  className="h-9 w-64 rounded-lg border border-zinc-200 bg-white pl-10 pr-4 text-sm text-zinc-900 placeholder-zinc-400 transition-all duration-200 hover:border-zinc-300 focus:border-brand focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
                 />
                 {searchQuery && (
                   <button

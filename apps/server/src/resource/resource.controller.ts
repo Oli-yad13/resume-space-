@@ -12,9 +12,17 @@ import {
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ResourceType } from "@prisma/client";
-import { CreateResourceDto, UpdateResourceDto } from "@resume-space/dto";
+import {
+  CreateResourceDto,
+  ReviewPostDto,
+  UpdateResourceDto,
+  UserWithSecrets,
+} from "@resume-space/dto";
 
+import { Roles } from "../auth/decorators/roles.decorator";
+import { RolesGuard } from "../auth/guards/roles.guard";
 import { TwoFactorGuard } from "../auth/guards/two-factor.guard";
+import { User } from "../user/decorators/user.decorator";
 import { ResourceService } from "./resource.service";
 
 @ApiTags("Resource")
@@ -49,21 +57,38 @@ export class ResourceController {
     return this.resourceService.getStats();
   }
 
-  // Admin endpoints (protected)
+  // =============== ADMIN ENDPOINTS ===============
+  // Guard order matters: TwoFactorGuard populates request.user, RolesGuard
+  // then checks it. Org admins manage only their own posts (enforced in the
+  // service); SUPER_ADMIN passes every gate.
+
   @Get("admin/all")
-  @UseGuards(TwoFactorGuard)
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("ORG_ADMIN")
   findAllAdmin(
+    @User() user: UserWithSecrets,
     @Query("type") type?: ResourceType,
     @Query("category") category?: string,
     @Query("search") search?: string,
     @Query("published") published?: string,
+    @Query("status") status?: string,
   ) {
-    return this.resourceService.findAll({
+    return this.resourceService.findAllAdmin(user, {
       type,
       category,
       search,
       published: published === "true" ? true : published === "false" ? false : undefined,
+      status,
     });
+  }
+
+  // Loads a resource in any review status for edit forms (the public GET /:id
+  // 404s non-approved posts). Must be declared before GET ":id".
+  @Get("admin/:id")
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("ORG_ADMIN")
+  findOneAdmin(@User() user: UserWithSecrets, @Param("id") id: string) {
+    return this.resourceService.findOneAdmin(user, id);
   }
 
   @Get(":id")
@@ -72,44 +97,64 @@ export class ResourceController {
   }
 
   @Post()
-  @UseGuards(TwoFactorGuard)
-  create(@Body() createResourceDto: CreateResourceDto) {
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("ORG_ADMIN")
+  create(@User() user: UserWithSecrets, @Body() createResourceDto: CreateResourceDto) {
     try {
-      return this.resourceService.create(createResourceDto);
+      return this.resourceService.create(user, createResourceDto);
     } catch (error) {
       Logger.error(error);
       throw error;
     }
   }
 
-  @Patch(":id")
-  @UseGuards(TwoFactorGuard)
-  update(@Param("id") id: string, @Body() updateResourceDto: UpdateResourceDto) {
-    try {
-      return this.resourceService.update(id, updateResourceDto);
-    } catch (error) {
-      Logger.error(error);
-      throw error;
-    }
+  @Patch(":id/review")
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("SUPER_ADMIN")
+  review(@User() user: UserWithSecrets, @Param("id") id: string, @Body() dto: ReviewPostDto) {
+    return this.resourceService.review(user, id, dto);
   }
 
   @Patch(":id/toggle-publish")
-  @UseGuards(TwoFactorGuard)
-  togglePublish(@Param("id") id: string, @Body("published") published: boolean) {
-    return this.resourceService.togglePublish(id, published);
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("ORG_ADMIN")
+  togglePublish(
+    @User() user: UserWithSecrets,
+    @Param("id") id: string,
+    @Body("published") published: boolean,
+  ) {
+    return this.resourceService.togglePublish(user, id, published);
   }
 
   @Patch(":id/toggle-featured")
-  @UseGuards(TwoFactorGuard)
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("SUPER_ADMIN")
   toggleFeatured(@Param("id") id: string, @Body("featured") featured: boolean) {
     return this.resourceService.toggleFeatured(id, featured);
   }
 
-  @Delete(":id")
-  @UseGuards(TwoFactorGuard)
-  remove(@Param("id") id: string) {
+  @Patch(":id")
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("ORG_ADMIN")
+  update(
+    @User() user: UserWithSecrets,
+    @Param("id") id: string,
+    @Body() updateResourceDto: UpdateResourceDto,
+  ) {
     try {
-      return this.resourceService.remove(id);
+      return this.resourceService.update(user, id, updateResourceDto);
+    } catch (error) {
+      Logger.error(error);
+      throw error;
+    }
+  }
+
+  @Delete(":id")
+  @UseGuards(TwoFactorGuard, RolesGuard)
+  @Roles("ORG_ADMIN")
+  remove(@User() user: UserWithSecrets, @Param("id") id: string) {
+    try {
+      return this.resourceService.remove(user, id);
     } catch (error) {
       Logger.error(error);
       throw error;

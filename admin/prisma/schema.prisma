@@ -19,6 +19,20 @@ enum Visibility {
   private
 }
 
+enum Role {
+  USER
+  ORG_ADMIN
+  SUPER_ADMIN
+}
+
+// Review state for org-posted content. Public visibility requires
+// published == true AND status == APPROVED.
+enum PostStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id               String             @id @default(cuid())
   name             String
@@ -28,6 +42,9 @@ model User {
   locale           String             @default("en-US")
   emailVerified    Boolean            @default(false)
   twoFactorEnabled Boolean            @default(false)
+  role             Role               @default(USER)
+  organization     String?
+  disabled         Boolean            @default(false)
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   provider         Provider
@@ -35,6 +52,8 @@ model User {
   resumes          Resume[]
   bookmarks        ResourceBookmark[]
   applications     Application[]
+  jobsPosted       Job[]              @relation("JobsPosted")
+  resourcesPosted  Resource[]         @relation("ResourcesPosted")
 }
 
 model Secrets {
@@ -88,25 +107,36 @@ enum ResourceType {
 }
 
 model Resource {
-  id          String               @id @default(cuid())
-  title       String
-  description String
-  type        ResourceType
-  category    String
-  videoUrl    String?
-  content     String?              @db.Text
-  featured    Boolean              @default(false)
-  published   Boolean              @default(true)
-  views       Int                  @default(0)
-  order       Int                  @default(0)
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-  bookmarks   ResourceBookmark[]
+  id           String             @id @default(cuid())
+  title        String
+  description  String
+  type         ResourceType
+  category     String
+  videoUrl     String?
+  content      String?            @db.Text
+  featured     Boolean            @default(false)
+  published    Boolean            @default(true)
+  // APPROVED default = backfill keeps existing rows public; the service always
+  // sets status explicitly on create (PENDING for org admins).
+  status       PostStatus         @default(APPROVED)
+  postedById   String?
+  postedBy     User?              @relation("ResourcesPosted", fields: [postedById], references: [id], onDelete: SetNull)
+  organization String?
+  reviewNote   String?            @db.Text
+  reviewedAt   DateTime?
+  reviewedById String?
+  views        Int                @default(0)
+  order        Int                @default(0)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  bookmarks    ResourceBookmark[]
 
   @@index([category])
   @@index([type])
   @@index([published])
   @@index([featured])
+  @@index([status])
+  @@index([postedById])
 }
 
 model ResourceBookmark {
@@ -175,6 +205,15 @@ model Job {
   experienceLevel  ExperienceLevel
   featured         Boolean         @default(false)
   published        Boolean         @default(true)
+  // APPROVED default = backfill keeps existing rows public; the service always
+  // sets status explicitly on create (PENDING for org admins).
+  status           PostStatus      @default(APPROVED)
+  postedById       String?
+  postedBy         User?           @relation("JobsPosted", fields: [postedById], references: [id], onDelete: SetNull)
+  organization     String?
+  reviewNote       String?         @db.Text
+  reviewedAt       DateTime?
+  reviewedById     String?
   expiresAt        DateTime?
   views            Int             @default(0)
   applications     Application[]
@@ -187,6 +226,8 @@ model Job {
   @@index([experienceLevel])
   @@index([published])
   @@index([featured])
+  @@index([status])
+  @@index([postedById])
   @@index([createdAt])
 }
 
