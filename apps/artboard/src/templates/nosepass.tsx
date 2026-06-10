@@ -205,7 +205,9 @@ const Section = <T,>({
     <section
       id={section.id}
       data-pagination-section={section.id}
-      data-pagination-gap={12}
+      // 16 = the items wrapper's space-y-4; declaring less would let the
+      // paginator overpack and creep into the bottom margin.
+      data-pagination-gap={16}
       className={cn("grid", dateKey !== undefined && "gap-y-4")}
     >
       {(!slice || slice.showHeader) && (
@@ -375,33 +377,107 @@ const Awards = () => {
   );
 };
 
+// Compact ALX-style listing: a dense bulleted grid in the content gutter
+// instead of one dated row per certificate — the stacked layout wasted most
+// of a page.
 const Certifications = () => {
   const section = useArtboardStore((state) => state.resume.sections.certifications);
+  const slice = useSectionSlice(section.id);
+  if (!section.visible || section.items.filter((item) => item.visible).length === 0) return null;
+
+  const visibleItems = section.items.filter((item) => item.visible);
+  const itemsToRender = slice ? visibleItems.slice(slice.start, slice.end) : visibleItems;
+
+  if (slice && itemsToRender.length === 0) return null;
 
   return (
-    <Section<Certification> section={section} urlKey="url" dateKey="date" summaryKey="summary">
-      {(item) => (
-        <div>
-          <div className="font-bold">{item.name}</div>
-          <LinkedEntity name={item.issuer} url={item.url} separateLinks={section.separateLinks} />
+    <section
+      id={section.id}
+      data-pagination-section={section.id}
+      data-pagination-gap={6}
+      className="grid"
+    >
+      {(!slice || slice.showHeader) && (
+        <div data-pagination-header className="grid grid-cols-4 gap-x-6">
+          <div className="text-right">
+            <h4 className="font-medium text-primary">{section.name}</h4>
+          </div>
+
+          <div className="col-span-3">
+            <div className="relative">
+              <hr className="mt-3 border-primary" />
+              <div className="absolute bottom-0 right-0 size-3 bg-primary" />
+            </div>
+          </div>
         </div>
       )}
-    </Section>
+
+      <div className="grid grid-cols-4 gap-x-6">
+        <div className="col-span-3 col-start-2 grid grid-cols-2 gap-x-6 gap-y-1.5">
+          {itemsToRender.map((item) => (
+            <div key={item.id} data-pagination-item={item.id} className="flex gap-x-1.5">
+              <span>•</span>
+              <span>
+                {item.name}
+                {item.issuer && <span className="opacity-60"> ({item.issuer})</span>}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 };
 
+// Compact ALX-style listing: 2-col grid of bold skill name over its keyword
+// list — replaces the single-column name/description/rating/keywords stack.
 const Skills = () => {
   const section = useArtboardStore((state) => state.resume.sections.skills);
+  const slice = useSectionSlice(section.id);
+  if (!section.visible || section.items.filter((item) => item.visible).length === 0) return null;
+
+  const visibleItems = section.items.filter((item) => item.visible);
+  const itemsToRender = slice ? visibleItems.slice(slice.start, slice.end) : visibleItems;
+
+  if (slice && itemsToRender.length === 0) return null;
 
   return (
-    <Section<Skill> section={section} levelKey="level" keywordsKey="keywords">
-      {(item) => (
-        <div>
-          <div className="font-bold">{item.name}</div>
-          <div>{item.description}</div>
+    <section
+      id={section.id}
+      data-pagination-section={section.id}
+      data-pagination-gap={10}
+      className="grid"
+    >
+      {(!slice || slice.showHeader) && (
+        <div data-pagination-header className="grid grid-cols-4 gap-x-6">
+          <div className="text-right">
+            <h4 className="font-medium text-primary">{section.name}</h4>
+          </div>
+
+          <div className="col-span-3">
+            <div className="relative">
+              <hr className="mt-3 border-primary" />
+              <div className="absolute bottom-0 right-0 size-3 bg-primary" />
+            </div>
+          </div>
         </div>
       )}
-    </Section>
+
+      <div className="grid grid-cols-4 gap-x-6">
+        <div className="col-span-3 col-start-2 grid grid-cols-2 gap-x-6 gap-y-2.5">
+          {itemsToRender.map((item) => {
+            const detail = item.keywords.length > 0 ? item.keywords.join(", ") : item.description;
+
+            return (
+              <div key={item.id} data-pagination-item={item.id}>
+                <div className="font-bold">{item.name}</div>
+                {detail && <div>{detail}</div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 };
 
@@ -600,11 +676,8 @@ export const Nosepass = ({ columns, isFirstPage = false }: TemplateProps) => {
 
   return (
     <div className="p-custom space-y-6">
-      <div className="flex items-center justify-between">
-        <img alt="Europass Logo" className="h-[42px]" src="/assets/europass.png" />
-
-        <p className="font-medium text-primary">Curriculum Vitae</p>
-
+      <div className="flex items-center justify-between border-b border-primary pb-3">
+        <p className="font-medium text-primary">Resume</p>
         <p className="font-medium text-primary">{name}</p>
       </div>
 

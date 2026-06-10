@@ -634,20 +634,25 @@ const mapSectionToComponent = (section: SectionKey) => {
 
 export const Pikachu = ({ columns, isFirstPage = false }: TemplateProps) => {
   const [main = [], sidebar = []] = columns;
+  const hasSidebar = useArtboardStore((state) =>
+    state.resume.metadata.layout.some((page) => (page[1] ?? []).length > 0),
+  );
 
   return (
     <div className="p-custom grid grid-cols-3 space-x-6">
-      <div className="sidebar group space-y-4">
-        {isFirstPage && <Picture className="w-full !max-w-none" />}
+      {hasSidebar && (
+        <div className="sidebar group space-y-4">
+          {isFirstPage && <Picture className="w-full !max-w-none" />}
 
-        <div data-pagination-column="1" className="space-y-4">
-          {sidebar.map((section) => (
-            <Fragment key={section}>{mapSectionToComponent(section)}</Fragment>
-          ))}
+          <div data-pagination-column="1" className="space-y-4">
+            {sidebar.map((section) => (
+              <Fragment key={section}>{mapSectionToComponent(section)}</Fragment>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className={cn("main group space-y-4", sidebar.length > 0 ? "col-span-2" : "col-span-3")}>
+      <div className={cn("main group space-y-4", hasSidebar ? "col-span-2" : "col-span-3")}>
         {isFirstPage && <Header />}
 
         <div data-pagination-column="0" className="space-y-4">

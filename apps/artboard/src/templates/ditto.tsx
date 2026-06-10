@@ -29,16 +29,23 @@ const Header = () => {
   const basics = useArtboardStore((state) => state.resume.basics);
 
   return (
-    <div className="p-custom relative grid grid-cols-3 space-x-4 pb-0">
-      <Picture className="mx-auto" />
+    <div>
+      {/* Dark masthead sized by its CONTENT — the old fixed-height backdrop
+          (h-[85px]) clipped the headline whenever the name/headline block grew
+          past it (long headlines, larger fonts, bigger margins). */}
+      <div className="bg-primary text-background">
+        <div className="p-custom grid grid-cols-3 items-center space-x-4 pb-4">
+          <Picture className="mx-auto" />
 
-      <div className="relative z-10 col-span-2 text-background">
-        <div className="space-y-0.5">
-          <h2 className="text-3xl font-bold">{basics.name}</h2>
-          <p>{basics.headline}</p>
+          <div className="col-span-2 space-y-0.5">
+            <h2 className="text-3xl font-bold">{basics.name}</h2>
+            <p>{basics.headline}</p>
+          </div>
         </div>
+      </div>
 
-        <div className="col-span-2 col-start-2 mt-10 text-foreground">
+      <div className="p-custom grid grid-cols-3 space-x-4 pb-0 pt-4">
+        <div className="col-span-2 col-start-2 text-foreground">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
             {basics.location && (
               <>
@@ -614,30 +621,30 @@ const mapSectionToComponent = (section: SectionKey) => {
 };
 
 export const Ditto = ({ columns, isFirstPage = false }: TemplateProps) => {
-  const [main, sidebar] = columns;
+  const [main = [], sidebar = []] = columns;
+  const hasSidebar = useArtboardStore((state) =>
+    state.resume.metadata.layout.some((page) => (page[1] ?? []).length > 0),
+  );
 
   return (
     <div>
-      {isFirstPage && (
-        <div className="relative">
-          <Header />
-          <div className="absolute inset-x-0 top-0 h-[85px] w-full bg-primary" />
-        </div>
-      )}
+      {isFirstPage && <Header />}
 
       <div className="grid grid-cols-3">
-        <div className="sidebar p-custom group space-y-4">
-          <div data-pagination-column="1" className="space-y-4">
-            {sidebar.map((section) => (
-              <Fragment key={section}>{mapSectionToComponent(section)}</Fragment>
-            ))}
+        {hasSidebar && (
+          <div className="sidebar p-custom group space-y-4">
+            <div data-pagination-column="1" className="space-y-4">
+              {sidebar.map((section) => (
+                <Fragment key={section}>{mapSectionToComponent(section)}</Fragment>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div
           className={cn(
             "main p-custom group space-y-4",
-            sidebar.length > 0 ? "col-span-2" : "col-span-3",
+            hasSidebar ? "col-span-2" : "col-span-3",
           )}
         >
           <div data-pagination-column="0" className="space-y-4">

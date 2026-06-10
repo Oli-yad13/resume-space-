@@ -588,23 +588,19 @@ const mapSectionToComponent = (section: SectionKey) => {
 };
 
 export const Gengar = ({ columns, isFirstPage = false }: TemplateProps) => {
-  const [main, sidebar] = columns;
+  const [main = [], sidebar = []] = columns;
+  const paddingStyle = { padding: "max(var(--margin), 34px)" };
 
   const primaryColor = useArtboardStore((state) => state.resume.metadata.theme.primary);
 
   return (
-    <div className="grid min-h-[inherit] grid-cols-3">
-      <div
-        className={cn(
-          "sidebar group flex flex-col",
-          !(isFirstPage || sidebar.length > 0) && "hidden",
-        )}
-      >
+    <div className="grid h-full min-h-full grid-cols-3">
+      <div className="sidebar group flex h-full min-h-full flex-col">
         {isFirstPage && <Header />}
 
         <div
-          className="p-custom flex-1 space-y-4"
-          style={{ backgroundColor: hexToRgb(primaryColor, 0.2) }}
+          className="flex-1 space-y-4"
+          style={{ ...paddingStyle, backgroundColor: hexToRgb(primaryColor, 0.2) }}
         >
           <div data-pagination-column="1" className="space-y-4">
             {sidebar.map((section) => (
@@ -614,10 +610,10 @@ export const Gengar = ({ columns, isFirstPage = false }: TemplateProps) => {
         </div>
       </div>
 
-      <div className={cn("main group", sidebar.length > 0 ? "col-span-2" : "col-span-3")}>
+      <div className="main group col-span-2">
         {isFirstPage && <Summary />}
 
-        <div className="p-custom space-y-4">
+        <div className="space-y-4" style={paddingStyle}>
           <div data-pagination-column="0" className="space-y-4">
             {main.map((section) => (
               <Fragment key={section}>{mapSectionToComponent(section)}</Fragment>

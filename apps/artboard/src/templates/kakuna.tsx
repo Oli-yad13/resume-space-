@@ -330,34 +330,90 @@ const Awards = () => {
   );
 };
 
+// Compact ALX-style listing: a dense 3-col bulleted grid instead of one
+// full-width row per certificate — the stacked layout wasted most of a page.
 const Certifications = () => {
   const section = useArtboardStore((state) => state.resume.sections.certifications);
+  const slice = useSectionSlice(section.id);
+  if (!section.visible || section.items.filter((item) => item.visible).length === 0) return null;
+
+  const visibleItems = section.items.filter((item) => item.visible);
+  const itemsToRender = slice ? visibleItems.slice(slice.start, slice.end) : visibleItems;
+
+  if (slice && itemsToRender.length === 0) return null;
 
   return (
-    <Section<Certification> section={section} urlKey="url" summaryKey="summary">
-      {(item) => (
-        <div>
-          <div className="font-bold">{item.name}</div>
-          <LinkedEntity name={item.issuer} url={item.url} separateLinks={section.separateLinks} />
-          <div className="font-bold">{item.date}</div>
-        </div>
+    <section
+      id={section.id}
+      data-pagination-section={section.id}
+      data-pagination-gap={6}
+      className="grid"
+    >
+      {(!slice || slice.showHeader) && (
+        <h4
+          data-pagination-header
+          className="mb-2 border-b border-primary text-center font-bold text-primary"
+        >
+          {section.name}
+        </h4>
       )}
-    </Section>
+
+      <div className="grid grid-cols-3 gap-x-5 gap-y-1.5">
+        {itemsToRender.map((item) => (
+          <div key={item.id} data-pagination-item={item.id} className="flex gap-x-1.5">
+            <span>•</span>
+            <span>
+              {item.name}
+              {item.issuer && <span className="opacity-60"> ({item.issuer})</span>}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 };
 
+// Compact ALX-style listing: 2-col grid of bold skill name over its keyword
+// list — replaces the single-column name/description/rating/keywords stack.
 const Skills = () => {
   const section = useArtboardStore((state) => state.resume.sections.skills);
+  const slice = useSectionSlice(section.id);
+  if (!section.visible || section.items.filter((item) => item.visible).length === 0) return null;
+
+  const visibleItems = section.items.filter((item) => item.visible);
+  const itemsToRender = slice ? visibleItems.slice(slice.start, slice.end) : visibleItems;
+
+  if (slice && itemsToRender.length === 0) return null;
 
   return (
-    <Section<Skill> section={section} levelKey="level" keywordsKey="keywords">
-      {(item) => (
-        <div>
-          <div className="font-bold">{item.name}</div>
-          <div>{item.description}</div>
-        </div>
+    <section
+      id={section.id}
+      data-pagination-section={section.id}
+      data-pagination-gap={10}
+      className="grid"
+    >
+      {(!slice || slice.showHeader) && (
+        <h4
+          data-pagination-header
+          className="mb-2 border-b border-primary text-center font-bold text-primary"
+        >
+          {section.name}
+        </h4>
       )}
-    </Section>
+
+      <div className="grid grid-cols-2 gap-x-6 gap-y-2.5">
+        {itemsToRender.map((item) => {
+          const detail = item.keywords.length > 0 ? item.keywords.join(", ") : item.description;
+
+          return (
+            <div key={item.id} data-pagination-item={item.id}>
+              <div className="font-bold">{item.name}</div>
+              {detail && <div>{detail}</div>}
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 };
 
@@ -548,7 +604,7 @@ const mapSectionToComponent = (section: SectionKey) => {
 };
 
 export const Kakuna = ({ columns, isFirstPage = false }: TemplateProps) => {
-  const [main, sidebar] = columns;
+  const [main = [], sidebar = []] = columns;
 
   return (
     <div className="p-custom space-y-4">

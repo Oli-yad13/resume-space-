@@ -169,8 +169,10 @@ export const LayoutSection = () => {
   const onRemovePage = (page: number) => {
     const layoutCopy = JSON.parse(JSON.stringify(layout));
 
-    layoutCopy[0][0].push(...layoutCopy[page][0]); // Main
-    layoutCopy[0][1].push(...layoutCopy[page][1]); // Sidebar
+    layoutCopy[0][0] = layoutCopy[0][0] ?? [];
+    layoutCopy[0][1] = layoutCopy[0][1] ?? [];
+    layoutCopy[0][0].push(...(layoutCopy[page][0] ?? [])); // Main
+    layoutCopy[0][1].push(...(layoutCopy[page][1] ?? [])); // Sidebar
 
     layoutCopy.splice(page, 1);
 
@@ -223,8 +225,10 @@ export const LayoutSection = () => {
             const mainIndex = `${pageIndex}.0`;
             const sidebarIndex = `${pageIndex}.1`;
 
-            const main = page[0];
-            const sidebar = page[1];
+            // Defensive: resumes saved with a single-column layout (e.g. via
+            // import) have no sidebar array — treat it as an empty sidebar.
+            const main = page[0] ?? [];
+            const sidebar = page[1] ?? [];
             const pageNumber = pageIndex + 1;
 
             return (

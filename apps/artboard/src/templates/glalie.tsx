@@ -606,15 +606,16 @@ const mapSectionToComponent = (section: SectionKey) => {
 };
 
 export const Glalie = ({ columns, isFirstPage = false }: TemplateProps) => {
-  const [main, sidebar] = columns;
+  const [main = [], sidebar = []] = columns;
+  const paddingStyle = { padding: "max(var(--margin), 34px)" };
 
   const primaryColor = useArtboardStore((state) => state.resume.metadata.theme.primary);
 
   return (
-    <div className="grid min-h-[inherit] grid-cols-3">
+    <div className="grid h-full min-h-full grid-cols-3">
       <div
-        className={cn("sidebar p-custom group space-y-4", sidebar.length === 0 && "hidden")}
-        style={{ backgroundColor: hexToRgb(primaryColor, 0.2) }}
+        className="sidebar group h-full min-h-full space-y-4"
+        style={{ ...paddingStyle, backgroundColor: hexToRgb(primaryColor, 0.2) }}
       >
         {isFirstPage && <Header />}
 
@@ -626,10 +627,8 @@ export const Glalie = ({ columns, isFirstPage = false }: TemplateProps) => {
       </div>
 
       <div
-        className={cn(
-          "main p-custom group space-y-4",
-          sidebar.length > 0 ? "col-span-2" : "col-span-3",
-        )}
+        className="main group col-span-2 space-y-4"
+        style={paddingStyle}
       >
         <div data-pagination-column="0" className="space-y-4">
           {main.map((section) => (

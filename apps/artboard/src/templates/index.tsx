@@ -14,6 +14,19 @@ import { Onyx } from "./onyx";
 import { Pikachu } from "./pikachu";
 import { Rhyhorn } from "./rhyhorn";
 
+// Templates that render their columns stacked in ONE vertical flow (no
+// side-by-side sidebar). For these, the paginator must merge every layout
+// column into a single flow — budgeting columns independently would put up
+// to 2× a page of content on each page and clip it at the paper edge.
+export const SINGLE_FLOW_TEMPLATES: ReadonlySet<Template> = new Set([
+  "alx",
+  "bronzor",
+  "kakuna",
+  "nosepass",
+  "onyx",
+  "rhyhorn",
+] as Template[]);
+
 export const getTemplate = (template: Template) => {
   switch (template) {
     case "alx": {

@@ -11,6 +11,14 @@ type Props = {
 
 export const MM_TO_PX = 3.78;
 
+// Resumes never look professional flush against the paper edge — enforce a
+// minimum visual margin regardless of the metadata slider value. Keep the
+// pagination budget (paginated-template) and the rendered padding (--margin
+// in artboard.tsx) on this same value or pages will overflow/underfill.
+export const MIN_PAGE_MARGIN = 34;
+
+export const effectivePageMargin = (margin: number) => Math.max(margin, MIN_PAGE_MARGIN);
+
 export const Page = ({ mode = "preview", pageNumber, children }: Props) => {
   const { isDarkMode } = useTheme();
 
@@ -24,7 +32,8 @@ export const Page = ({ mode = "preview", pageNumber, children }: Props) => {
       style={{
         fontFamily,
         width: `${pageSizeMap[page.format].width * MM_TO_PX}px`,
-        minHeight: `${pageSizeMap[page.format].height * MM_TO_PX}px`,
+        height: `${pageSizeMap[page.format].height * MM_TO_PX}px`,
+        overflow: "hidden",
       }}
     >
       {mode === "builder" && page.options.pageNumbers && (

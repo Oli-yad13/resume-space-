@@ -573,21 +573,26 @@ const mapSectionToComponent = (section: SectionKey) => {
 
 export const Azurill = ({ columns, isFirstPage = false }: TemplateProps) => {
   const [main = [], sidebar = []] = columns;
+  const hasSidebar = useArtboardStore((state) =>
+    state.resume.metadata.layout.some((page) => (page[1] ?? []).length > 0),
+  );
 
   return (
     <div className="p-custom space-y-3">
       {isFirstPage && <Header />}
 
       <div className="grid grid-cols-3 gap-x-4">
-        <div data-pagination-column="1" className="sidebar group space-y-4">
-          {sidebar.map((section) => (
-            <Fragment key={section}>{mapSectionToComponent(section)}</Fragment>
-          ))}
-        </div>
+        {hasSidebar && (
+          <div data-pagination-column="1" className="sidebar group space-y-4">
+            {sidebar.map((section) => (
+              <Fragment key={section}>{mapSectionToComponent(section)}</Fragment>
+            ))}
+          </div>
+        )}
 
         <div
           data-pagination-column="0"
-          className={cn("main group space-y-4", sidebar.length > 0 ? "col-span-2" : "col-span-3")}
+          className={cn("main group space-y-4", hasSidebar ? "col-span-2" : "col-span-3")}
         >
           {main.map((section) => (
             <Fragment key={section}>{mapSectionToComponent(section)}</Fragment>

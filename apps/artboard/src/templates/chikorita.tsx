@@ -590,15 +590,14 @@ const mapSectionToComponent = (section: SectionKey) => {
 };
 
 export const Chikorita = ({ columns, isFirstPage = false }: TemplateProps) => {
-  const [main, sidebar] = columns;
+  const [main = [], sidebar = []] = columns;
+  const paddingStyle = { padding: "max(var(--margin), 34px)" };
 
   return (
-    <div className="grid min-h-[inherit] grid-cols-3">
+    <div className="grid h-full min-h-full grid-cols-3">
       <div
-        className={cn(
-          "main p-custom group space-y-4",
-          sidebar.length > 0 ? "col-span-2" : "col-span-3",
-        )}
+        className="main group col-span-2 space-y-4"
+        style={paddingStyle}
       >
         {isFirstPage && <Header />}
 
@@ -610,10 +609,8 @@ export const Chikorita = ({ columns, isFirstPage = false }: TemplateProps) => {
       </div>
 
       <div
-        className={cn(
-          "sidebar p-custom group h-full space-y-4 bg-primary text-background",
-          sidebar.length === 0 && "hidden",
-        )}
+        className="sidebar group h-full min-h-full space-y-4 bg-primary text-background"
+        style={paddingStyle}
       >
         <div data-pagination-column="1" className="space-y-4">
           {sidebar.map((section) => (

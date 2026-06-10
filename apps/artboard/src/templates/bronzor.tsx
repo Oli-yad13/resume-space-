@@ -93,7 +93,7 @@ const Summary = () => {
       className="grid grid-cols-5 border-t pt-2.5"
     >
       {(!slice || slice.showHeader) && (
-        <div data-pagination-header>
+        <div data-pagination-header className="self-start">
           <h4 className="text-base font-bold">{section.name}</h4>
         </div>
       )}
@@ -102,7 +102,7 @@ const Summary = () => {
         data-pagination-item={section.id}
         dangerouslySetInnerHTML={{ __html: sanitize(section.content) }}
         style={{ columns: section.columns }}
-        className="wysiwyg col-span-4"
+        className="wysiwyg col-span-4 col-start-2"
       />
     </section>
   );
@@ -204,13 +204,13 @@ const Section = <T,>({
       className="grid grid-cols-5 border-t pt-2.5"
     >
       {(!slice || slice.showHeader) && (
-        <div data-pagination-header>
+        <div data-pagination-header className="self-start">
           <h4 className="text-base font-bold">{section.name}</h4>
         </div>
       )}
 
       <div
-        className="col-span-4 grid gap-x-6 gap-y-3"
+        className="col-span-4 col-start-2 grid gap-x-6 gap-y-3"
         style={{ gridTemplateColumns: `repeat(${section.columns}, 1fr)` }}
       >
         {itemsToRender.map((item) => {
@@ -349,39 +349,84 @@ const Awards = () => {
   );
 };
 
+// Compact ALX-style listing: a dense bulleted grid instead of one full-width
+// row per certificate — the stacked layout wasted most of a page.
 const Certifications = () => {
   const section = useArtboardStore((state) => state.resume.sections.certifications);
+  const slice = useSectionSlice(section.id);
+  if (!section.visible || section.items.filter((item) => item.visible).length === 0) return null;
+
+  const visibleItems = section.items.filter((item) => item.visible);
+  const itemsToRender = slice ? visibleItems.slice(slice.start, slice.end) : visibleItems;
+
+  if (slice && itemsToRender.length === 0) return null;
 
   return (
-    <Section<Certification> section={section} urlKey="url" summaryKey="summary">
-      {(item) => (
-        <div className="flex items-start justify-between">
-          <div className="text-left">
-            <div className="font-bold">{item.name}</div>
-            <LinkedEntity name={item.issuer} url={item.url} separateLinks={section.separateLinks} />
-          </div>
-
-          <div className="shrink-0 text-right">
-            <div className="font-bold">{item.date}</div>
-          </div>
+    <section
+      id={section.id}
+      data-pagination-section={section.id}
+      data-pagination-gap={6}
+      className="grid grid-cols-5 border-t pt-2.5"
+    >
+      {(!slice || slice.showHeader) && (
+        <div data-pagination-header className="self-start">
+          <h4 className="text-base font-bold">{section.name}</h4>
         </div>
       )}
-    </Section>
+
+      <div className="col-span-4 col-start-2 grid grid-cols-2 gap-x-6 gap-y-1.5">
+        {itemsToRender.map((item) => (
+          <div key={item.id} data-pagination-item={item.id} className="flex gap-x-1.5">
+            <span>•</span>
+            <span>
+              {item.name}
+              {item.issuer && <span className="opacity-60"> ({item.issuer})</span>}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 };
 
+// Compact ALX-style listing: 2-col grid of bold skill name over its keyword
+// list — replaces the single-column name/description/rating/keywords stack.
 const Skills = () => {
   const section = useArtboardStore((state) => state.resume.sections.skills);
+  const slice = useSectionSlice(section.id);
+  if (!section.visible || section.items.filter((item) => item.visible).length === 0) return null;
+
+  const visibleItems = section.items.filter((item) => item.visible);
+  const itemsToRender = slice ? visibleItems.slice(slice.start, slice.end) : visibleItems;
+
+  if (slice && itemsToRender.length === 0) return null;
 
   return (
-    <Section<Skill> section={section} levelKey="level" keywordsKey="keywords">
-      {(item) => (
-        <div className="space-y-0.5">
-          <div className="font-bold">{item.name}</div>
-          <div>{item.description}</div>
+    <section
+      id={section.id}
+      data-pagination-section={section.id}
+      data-pagination-gap={10}
+      className="grid grid-cols-5 border-t pt-2.5"
+    >
+      {(!slice || slice.showHeader) && (
+        <div data-pagination-header className="self-start">
+          <h4 className="text-base font-bold">{section.name}</h4>
         </div>
       )}
-    </Section>
+
+      <div className="col-span-4 col-start-2 grid grid-cols-2 gap-x-6 gap-y-2.5">
+        {itemsToRender.map((item) => {
+          const detail = item.keywords.length > 0 ? item.keywords.join(", ") : item.description;
+
+          return (
+            <div key={item.id} data-pagination-item={item.id}>
+              <div className="font-bold">{item.name}</div>
+              {detail && <div>{detail}</div>}
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 };
 

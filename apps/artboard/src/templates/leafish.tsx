@@ -532,7 +532,14 @@ const mapSectionToComponent = (section: SectionKey) => {
 };
 
 export const Leafish = ({ columns, isFirstPage = false }: TemplateProps) => {
-  const [main, sidebar] = columns;
+  const [main = [], sidebar = []] = columns;
+  // Width must come from the LAYOUT, not this page's slice: if main expanded
+  // to full width on pages where the sidebar is exhausted, items would render
+  // wider/shorter than they measured (measurement always includes the sidebar)
+  // and the paginator's budgets would no longer match the rendered page.
+  const hasSidebar = useArtboardStore((state) =>
+    state.resume.metadata.layout.some((page) => (page[1] ?? []).length > 0),
+  );
 
   return (
     <div>
@@ -541,7 +548,7 @@ export const Leafish = ({ columns, isFirstPage = false }: TemplateProps) => {
       <div className="p-custom grid grid-cols-2 items-start space-x-6">
         <div
           data-pagination-column="0"
-          className={cn("grid gap-y-4", sidebar.length === 0 && "col-span-2")}
+          className={cn("grid gap-y-4", !hasSidebar && "col-span-2")}
         >
           {main.map((section) => (
             <Fragment key={section}>{mapSectionToComponent(section)}</Fragment>

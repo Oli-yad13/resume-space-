@@ -34,6 +34,7 @@ export default defineConfig({
 
   server: {
     host: true,
+    allowedHosts: ["host.docker.internal"],
     port: 6173,
     fs: { allow: [searchForWorkspaceRoot(process.cwd())] },
   },

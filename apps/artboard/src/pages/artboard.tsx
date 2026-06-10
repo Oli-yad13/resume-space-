@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet-async";
 import { Outlet } from "react-router";
 import webfontloader from "webfontloader";
 
+import { effectivePageMargin } from "../components/page";
 import { useArtboardStore } from "../store/artboard";
 
 export const ArtboardPage = () => {
@@ -34,7 +35,10 @@ export const ArtboardPage = () => {
     document.documentElement.style.setProperty("font-size", `${metadata.typography.font.size}px`);
     document.documentElement.style.setProperty("line-height", `${metadata.typography.lineHeight}`);
 
-    document.documentElement.style.setProperty("--margin", `${metadata.page.margin}px`);
+    document.documentElement.style.setProperty(
+      "--margin",
+      `${effectivePageMargin(metadata.page.margin)}px`,
+    );
     document.documentElement.style.setProperty("--font-size", `${metadata.typography.font.size}px`);
     document.documentElement.style.setProperty(
       "--line-height",

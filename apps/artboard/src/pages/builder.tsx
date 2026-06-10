@@ -50,7 +50,7 @@ export const BuilderLayout = () => {
     >
       <TransformComponent
         wrapperClass="!w-screen !h-screen"
-        contentClass="flex items-start justify-center gap-x-12 pointer-events-none"
+        contentClass="flex flex-col items-center gap-y-12 py-12 pointer-events-none"
         contentStyle={{
           minWidth: `${pageSizeMap[format].width * MM_TO_PX + 42}px`,
         }}
