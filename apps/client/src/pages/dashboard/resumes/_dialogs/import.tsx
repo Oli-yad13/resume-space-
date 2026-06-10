@@ -69,6 +69,11 @@ type ValidationResult =
       result: ResumeData | ReactiveResumeV3 | LinkedIn | JsonResume;
     };
 
+const deriveTitleFromFile = (file: File) => {
+  const title = file.name.replace(/\.[^/.]+$/, "").trim();
+  return title.length > 0 ? title : undefined;
+};
+
 export const ImportDialog = () => {
   const { toast } = useToast();
   const { isOpen, close } = useDialog("import");
@@ -94,7 +99,7 @@ export const ImportDialog = () => {
   }, [filetype]);
 
   const accept = useMemo(() => {
-    if (filetype === ImportType["resume-file"]) return ".pdf,.png,.jpg,.jpeg,.webp,.txt";
+    if (filetype === ImportType["resume-file"]) return ".pdf,.png,.jpg,.jpeg,.webp,.txt,.docx";
     if (filetype.includes("json")) return ".json";
     if (filetype.includes("zip")) return ".zip";
     return "";
@@ -167,42 +172,43 @@ export const ImportDialog = () => {
   };
 
   const onImport = async () => {
-    const { type } = formSchema.parse(form.getValues());
+    const { type, file } = formSchema.parse(form.getValues());
+    const title = deriveTitleFromFile(file);
 
     if (!validationResult?.isValid || validationResult.type !== type) return;
 
     try {
       if (type === ImportType["resume-file"]) {
         // Already parsed to ResumeData on validate — import directly.
-        await importResume({ data: validationResult.result as ResumeData });
+        await importResume({ title, data: validationResult.result as ResumeData });
       }
 
       if (type === ImportType["reactive-resume-json"]) {
         const parser = new ReactiveResumeParser();
         const data = parser.convert(validationResult.result as ResumeData);
 
-        await importResume({ data });
+        await importResume({ title, data });
       }
 
       if (type === ImportType["reactive-resume-v3-json"]) {
         const parser = new ReactiveResumeV3Parser();
         const data = parser.convert(validationResult.result as ReactiveResumeV3);
 
-        await importResume({ data });
+        await importResume({ title, data });
       }
 
       if (type === ImportType["json-resume-json"]) {
         const parser = new JsonResumeParser();
         const data = parser.convert(validationResult.result as JsonResume);
 
-        await importResume({ data });
+        await importResume({ title, data });
       }
 
       if (type === ImportType["linkedin-data-export-zip"]) {
         const parser = new LinkedInParser();
         const data = parser.convert(validationResult.result as LinkedIn);
 
-        await importResume({ data });
+        await importResume({ title, data });
       }
 
       close();
@@ -250,7 +256,7 @@ export const ImportDialog = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="resume-file">
-                          {t`Existing Resume / CV — AI parse (.pdf, image, .txt)`}
+                          {t`Existing Resume / CV — AI parse (.pdf, .docx, image, .txt)`}
                         </SelectItem>
                         {/* eslint-disable-next-line lingui/no-unlocalized-strings */}
                         <SelectItem value="reactive-resume-json">

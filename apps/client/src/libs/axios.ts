@@ -22,7 +22,9 @@ axios.interceptors.response.use(
   },
   (error) => {
     const message = error.response?.data.message as ErrorMessage;
-    const description = translateError(message);
+    const detail = error.response?.data.error;
+    const description =
+      typeof detail === "string" && detail.length > 0 ? detail : translateError(message);
 
     if (description) {
       toast({

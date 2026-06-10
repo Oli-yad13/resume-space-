@@ -63,8 +63,14 @@ export class ResumeService {
     });
   }
 
+  private getErrorMessage(error: unknown) {
+    if (error instanceof Error) return error.message;
+    if (typeof error === "string") return error;
+    return "Unknown error";
+  }
+
   /**
-   * Parse a real resume/CV file (PDF, image, plain text) into validated ResumeData
+   * Parse a real resume/CV file (PDF, DOCX, image, plain text) into validated ResumeData
    * using Gemini's multimodal parsing. Does NOT persist — the client previews the
    * result and then imports it through the regular `import` flow.
    */
@@ -75,12 +81,19 @@ export class ResumeService {
       );
     }
 
-    const parsed = await this.geminiService.parseResumeFile({
-      buffer: file.buffer,
-      mimeType: file.mimetype,
-    });
+    try {
+      const parsed = await this.geminiService.parseResumeFile({
+        buffer: file.buffer,
+        mimeType: file.mimetype,
+      });
 
-    return ResumeService.mapParsedResume(parsed);
+      return ResumeService.mapParsedResume(parsed);
+    } catch (error) {
+      Logger.error(error);
+      throw new BadRequestException(
+        `Resume Space could not parse this file. ${this.getErrorMessage(error)}`,
+      );
+    }
   }
 
   /** Map loosely-typed AI output onto strict ResumeData, generating item ids. */

@@ -77,7 +77,7 @@ export class ResumeController {
     }
   }
 
-  // Parse a real resume/CV file (PDF, image, plain text) into resume data via AI.
+  // Parse a real resume/CV file (PDF, DOCX, image, plain text) into resume data via AI.
   // Returns the parsed data for preview; the client then imports it via POST /resume/import.
   @Post("import/parse")
   @UseGuards(TwoFactorGuard)
@@ -85,20 +85,46 @@ export class ResumeController {
   async parseImport(@UploadedFile() file?: Express.Multer.File) {
     if (!file) throw new BadRequestException("No file uploaded.");
 
-    const allowed = ["application/pdf", "image/png", "image/jpeg", "image/webp", "text/plain"];
-    if (!allowed.includes(file.mimetype)) {
+    const allowed = [
+      "application/pdf",
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "text/plain",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    // Browsers/OSes sometimes upload with a generic mimetype (e.g.
+    // application/octet-stream for .docx/.txt) — recover it from the file
+    // extension instead of rejecting the upload.
+    let mimetype = file.mimetype;
+    if (!allowed.includes(mimetype)) {
+      const byExtension: Record<string, string> = {
+        ".pdf": "application/pdf",
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+        ".txt": "text/plain",
+        ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      };
+      const extension = /\.[^.]+$/.exec(file.originalname.toLowerCase())?.[0] ?? "";
+      mimetype = byExtension[extension] ?? mimetype;
+    }
+
+    if (!allowed.includes(mimetype)) {
       throw new BadRequestException(
-        `Unsupported file type "${file.mimetype}". Upload a PDF, image (PNG/JPEG/WebP), or text file.`,
+        `Unsupported file type "${file.mimetype}". Upload a PDF, DOCX, image (PNG/JPEG/WebP), or text file.`,
       );
     }
 
     try {
-      const data = await this.resumeService.parseImportedFile(file);
+      const data = await this.resumeService.parseImportedFile({ ...file, mimetype });
       return { data };
     } catch (error) {
       if (error instanceof BadRequestException) throw error;
       Logger.error(error);
-      throw new InternalServerErrorException(error);
+      throw new BadRequestException("Resume Space could not parse this file.");
     }
   }
 

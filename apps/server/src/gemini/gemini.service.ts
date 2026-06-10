@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import JSZip from "jszip";
 
 import { Config } from "../config/schema";
 
@@ -37,6 +38,52 @@ export class GeminiService {
 
   isAvailable(): boolean {
     return this.model !== null;
+  }
+
+  private getErrorMessage(error: unknown) {
+    const message = error instanceof Error ? error.message : typeof error === "string" ? error : "";
+
+    if (message.includes("[429 Too Many Requests]") || message.includes("Quota exceeded")) {
+      return "Gemini API quota is exhausted for the configured key/model. Enable billing, use a key with available quota, or set GEMINI_MODEL to a model with quota.";
+    }
+
+    if (message.includes("[400 Bad Request]")) {
+      return "Gemini rejected the request. The uploaded file may be unsupported, too large, or unreadable.";
+    }
+
+    if (message.includes("[403 Forbidden]") || message.includes("API key not valid")) {
+      return "Gemini API access is not valid for the configured key.";
+    }
+
+    if (message) return message;
+    return "Unknown error";
+  }
+
+  private decodeXmlEntities(text: string) {
+    return text
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'");
+  }
+
+  private async extractDocxText(buffer: Buffer) {
+    const zip = await JSZip.loadAsync(buffer);
+    const documentXml = await zip.file("word/document.xml")?.async("text");
+
+    if (!documentXml) {
+      throw new Error("Failed to read DOCX document contents");
+    }
+
+    const normalized = documentXml
+      .replace(/<\/w:p>/g, "\n")
+      .replace(/<\/w:tr>/g, "\n")
+      .replace(/<w:tab\/>/g, "\t")
+      .replace(/<w:br[^>]*\/>/g, "\n")
+      .replace(/<[^>]+>/g, "");
+
+    return this.decodeXmlEntities(normalized).replace(/\n{3,}/g, "\n\n").trim();
   }
 
   async analyzeResumeForJobs(
@@ -220,7 +267,7 @@ Return EXACTLY in this JSON format (no markdown):
   }
 
   /**
-   * Parse a real resume/CV file (PDF, image, or plain text) into a loosely-typed
+   * Parse a real resume/CV file (PDF, DOCX, image, or plain text) into a loosely-typed
    * JSON object using Gemini's multimodal capabilities. The caller is responsible
    * for mapping the result onto the strict ResumeData schema.
    */
@@ -246,11 +293,16 @@ Return ONLY raw JSON (no markdown code fences) in this exact shape:
   "certifications": [{ "name": "", "issuer": "", "date": "" }],
   "languages": [{ "name": "", "description": "proficiency level" }],
   "awards": [{ "title": "", "awarder": "", "date": "", "summary": "" }]
-}`;
+    }`;
 
     const parts: any[] = [];
     if (file.mimeType === "text/plain") {
       parts.push({ text: `${prompt}\n\nRESUME TEXT:\n${file.buffer.toString("utf8")}` });
+    } else if (
+      file.mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ) {
+      const docxText = await this.extractDocxText(file.buffer);
+      parts.push({ text: `${prompt}\n\nRESUME TEXT:\n${docxText}` });
     } else {
       parts.push({
         inlineData: { mimeType: file.mimeType, data: file.buffer.toString("base64") },
@@ -265,17 +317,14 @@ Return ONLY raw JSON (no markdown code fences) in this exact shape:
       });
 
       const response = result.response.text();
-      const cleaned = response
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
+      const cleaned = response.replace(/```json/g, "").replace(/```/g, "").trim();
 
       this.logger.log("Parsed resume file via Gemini");
 
       return JSON.parse(cleaned);
     } catch (error) {
       this.logger.error("Failed to parse resume file", error);
-      throw new Error("Failed to parse the uploaded resume");
+      throw new Error(`Failed to parse the uploaded resume: ${this.getErrorMessage(error)}`);
     }
   }
 }

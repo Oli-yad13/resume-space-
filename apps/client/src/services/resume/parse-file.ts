@@ -4,7 +4,7 @@ import type { AxiosResponse } from "axios";
 import { axios } from "@/client/libs/axios";
 
 /**
- * Upload a real resume/CV file (PDF, image, or plain text) and have the server
+ * Upload a real resume/CV file (PDF, DOCX, image, or plain text) and have the server
  * parse it into ResumeData via AI. The result is returned for preview; persist it
  * afterwards with `importResume({ data })`.
  */
