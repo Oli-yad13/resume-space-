@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.nx/
+admin/.next/
+admin/next-env.d.ts
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+admin/.env.local
+
+# Render-harness output (screenshots) and local fixtures with personal CV data
+/*.png
+/*.pdf
+tools/scripts/fixtures/
+
+# Internal working notes (not part of the public repo)
+CLAUDE.md
+RUN.md
+tracker.md
+docs&stuff/
+
+# OS / editor
+.DS_Store
+Thumbs.db
